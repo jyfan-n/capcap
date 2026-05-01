@@ -513,6 +513,11 @@ struct NumberAnnotation: Annotation {
     /// from the badge's edge out to `tip`. Set during creation by drag, and
     /// adjustable later via the tip handle in adjust mode.
     var tip: NSPoint?
+    /// Optional curve handle. When set together with `tip`, the shaft is
+    /// drawn as a quadratic bezier through `controlPoint` and the
+    /// arrowhead orientation follows the tangent at the tip. nil = straight
+    /// shaft.
+    var controlPoint: NSPoint? = nil
     let number: Int
     let color: NSColor
 
@@ -537,44 +542,70 @@ struct NumberAnnotation: Annotation {
 
     var boundingRect: NSRect {
         guard hasArrow, let tip else { return circleRect }
-        let tipBox = NSRect(x: tip.x, y: tip.y, width: 0, height: 0)
-        return circleRect.union(tipBox)
+        var rect = circleRect.union(NSRect(x: tip.x, y: tip.y, width: 0, height: 0))
+        if let cp = controlPoint {
+            rect = rect.union(NSRect(x: cp.x, y: cp.y, width: 0, height: 0))
+        }
+        return rect
+    }
+
+    /// Default curve handle position when no `controlPoint` is set — the
+    /// midpoint of the shaft (badge center to tip) so a fresh straight
+    /// arrow still surfaces a grabbable bend point.
+    var defaultCurveMid: NSPoint? {
+        guard hasArrow, let tip else { return nil }
+        return NSPoint(
+            x: (center.x + tip.x) / 2,
+            y: (center.y + tip.y) / 2
+        )
+    }
+
+    /// Position where the curve handle is rendered: the controlPoint when
+    /// set, otherwise the visual midpoint. nil when there's no arrow.
+    var curveHandlePoint: NSPoint? {
+        controlPoint ?? defaultCurveMid
     }
 
     func draw(in context: CGContext, bounds: NSRect) {
-        let radius = NumberAnnotation.radius
-
-        // Arrow shaft + head from circle edge to tip (drawn first so the
-        // badge sits on top and hides any shaft pixels that would overlap).
+        // Arrow shaft + head from badge center to tip (drawn first so the
+        // badge sits on top and hides the part of the shaft inside the
+        // circle — visually the arrow emerges from the badge's edge while
+        // geometrically the bezier starts from the center).
         if hasArrow, let tip {
-            let dx = tip.x - center.x
-            let dy = tip.y - center.y
-            let dist = hypot(dx, dy)
-            let unitX = dx / dist
-            let unitY = dy / dist
-            let shaftStart = NSPoint(
-                x: center.x + unitX * radius,
-                y: center.y + unitY * radius
-            )
             let shaftWidth: CGFloat = 3
             context.setStrokeColor(color.cgColor)
             context.setFillColor(color.cgColor)
             context.setLineWidth(shaftWidth)
             context.setLineCap(.round)
-            context.move(to: shaftStart)
-            context.addLine(to: tip)
-            context.strokePath()
 
-            // Arrowhead — direction follows the shaft tangent.
-            let headLength: CGFloat = max(10, shaftWidth * 4)
-            let headWidth: CGFloat = max(7, shaftWidth * 3)
-            let baseX = tip.x - unitX * headLength
-            let baseY = tip.y - unitY * headLength
-            context.move(to: tip)
-            context.addLine(to: CGPoint(x: baseX - unitY * headWidth / 2, y: baseY + unitX * headWidth / 2))
-            context.addLine(to: CGPoint(x: baseX + unitY * headWidth / 2, y: baseY - unitX * headWidth / 2))
-            context.closePath()
-            context.fillPath()
+            let endTangent: (dx: CGFloat, dy: CGFloat)
+            if let cp = controlPoint {
+                context.move(to: center)
+                context.addQuadCurve(to: tip, control: cp)
+                context.strokePath()
+                endTangent = (tip.x - cp.x, tip.y - cp.y)
+            } else {
+                context.move(to: center)
+                context.addLine(to: tip)
+                context.strokePath()
+                endTangent = (tip.x - center.x, tip.y - center.y)
+            }
+
+            // Arrowhead — direction follows the local tangent at the tip.
+            let tlen = hypot(endTangent.dx, endTangent.dy)
+            if tlen > 0 {
+                let unitX = endTangent.dx / tlen
+                let unitY = endTangent.dy / tlen
+                let headLength: CGFloat = max(10, shaftWidth * 4)
+                let headWidth: CGFloat = max(7, shaftWidth * 3)
+                let baseX = tip.x - unitX * headLength
+                let baseY = tip.y - unitY * headLength
+                context.move(to: tip)
+                context.addLine(to: CGPoint(x: baseX - unitY * headWidth / 2, y: baseY + unitX * headWidth / 2))
+                context.addLine(to: CGPoint(x: baseX + unitY * headWidth / 2, y: baseY - unitX * headWidth / 2))
+                context.closePath()
+                context.fillPath()
+            }
         }
 
         // Filled badge circle
@@ -609,7 +640,11 @@ struct NumberAnnotation: Annotation {
         if hasArrow, let tip {
             let line = CGMutablePath()
             line.move(to: center)
-            line.addLine(to: tip)
+            if let cp = controlPoint {
+                line.addQuadCurve(to: tip, control: cp)
+            } else {
+                line.addLine(to: tip)
+            }
             return strokedPathContains(line, point: point, lineWidth: 4)
         }
         return false
@@ -619,15 +654,28 @@ struct NumberAnnotation: Annotation {
         NumberAnnotation(
             center: NSPoint(x: center.x + delta.x, y: center.y + delta.y),
             tip: tip.map { NSPoint(x: $0.x + delta.x, y: $0.y + delta.y) },
+            controlPoint: controlPoint.map { NSPoint(x: $0.x + delta.x, y: $0.y + delta.y) },
             number: number,
             color: color
         )
     }
 
-    /// Adjust-mode helper: replace (or clear) the arrow tip.
+    /// Adjust-mode helper: replace (or clear) the arrow tip. Clearing the
+    /// tip also drops the curve control point — there's no shaft for it
+    /// to bend.
     func withTip(_ tip: NSPoint?) -> NumberAnnotation {
         var copy = self
         copy.tip = tip
+        if tip == nil {
+            copy.controlPoint = nil
+        }
+        return copy
+    }
+
+    /// Adjust-mode helper: replace (or clear) the curve control point.
+    func withControlPoint(_ cp: NSPoint?) -> NumberAnnotation {
+        var copy = self
+        copy.controlPoint = cp
         return copy
     }
 }

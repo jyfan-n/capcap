@@ -981,12 +981,18 @@ class EditCanvasView: NSView {
         return rotated(NSPoint(x: box.maxX, y: box.maxY), for: annotation)
     }
 
-    /// Curve handle position for arrows. Falls back to the visual midpoint
-    /// when no `controlPoint` is set so a fresh straight arrow still has a
-    /// grabbable bend point.
+    /// Curve handle position for any annotation that supports curving its
+    /// shaft (arrows and numbered badges with an arrow). Falls back to the
+    /// visual midpoint when no `controlPoint` is set so a fresh straight
+    /// shaft still has a grabbable bend point.
     private func curveHandleCenter(for annotation: Annotation) -> NSPoint? {
-        guard let arrow = annotation as? ArrowAnnotation else { return nil }
-        return arrow.curveHandlePoint
+        if let arrow = annotation as? ArrowAnnotation {
+            return arrow.curveHandlePoint
+        }
+        if let number = annotation as? NumberAnnotation {
+            return number.curveHandlePoint
+        }
+        return nil
     }
 
     /// Tip handle position for numbered badges. Anchors at `tip` when set;
@@ -1226,17 +1232,20 @@ class EditCanvasView: NSView {
             }
         }
 
-        if let cp = curveHandleCenter(for: annotation) {
-            let r = EditCanvasView.curveHandleSize / 2 + 4
-            if hypot(point.x - cp.x, point.y - cp.y) <= r {
-                return .curve
-            }
-        }
-
+        // Tip handle wins over curve when both apply (numbered badges with
+        // a short shaft) — the arrowhead is the more visually salient grab
+        // target.
         if let tip = tipHandleCenter(for: annotation) {
             let r = EditCanvasView.tipHandleSize / 2 + 4
             if hypot(point.x - tip.x, point.y - tip.y) <= r {
                 return .tip
+            }
+        }
+
+        if let cp = curveHandleCenter(for: annotation) {
+            let r = EditCanvasView.curveHandleSize / 2 + 4
+            if hypot(point.x - cp.x, point.y - cp.y) <= r {
+                return .curve
             }
         }
 
@@ -1263,15 +1272,23 @@ class EditCanvasView: NSView {
             annotations[state.index] = original.withRotation(newRotation)
 
         case .curve:
-            guard let arrow = state.original as? ArrowAnnotation else { return }
-            // Snap back to a straight arrow when the handle is dragged near
+            // Snap back to a straight shaft when the handle is dragged near
             // the geometric midpoint, so the user can undo a curve without
             // having to land precisely on the original mid pixel.
-            let mid = arrow.defaultCurveMid
-            if hypot(currentMouse.x - mid.x, currentMouse.y - mid.y) < 4 {
-                annotations[state.index] = arrow.withControlPoint(nil)
-            } else {
-                annotations[state.index] = arrow.withControlPoint(currentMouse)
+            if let arrow = state.original as? ArrowAnnotation {
+                let mid = arrow.defaultCurveMid
+                if hypot(currentMouse.x - mid.x, currentMouse.y - mid.y) < 4 {
+                    annotations[state.index] = arrow.withControlPoint(nil)
+                } else {
+                    annotations[state.index] = arrow.withControlPoint(currentMouse)
+                }
+            } else if let number = state.original as? NumberAnnotation,
+                      let mid = number.defaultCurveMid {
+                if hypot(currentMouse.x - mid.x, currentMouse.y - mid.y) < 4 {
+                    annotations[state.index] = number.withControlPoint(nil)
+                } else {
+                    annotations[state.index] = number.withControlPoint(currentMouse)
+                }
             }
 
         case .tip:
