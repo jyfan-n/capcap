@@ -110,6 +110,28 @@ class SelectionView: NSView {
         }
     }
 
+    /// Resize the selection rect using a handle drag driven by an overlay
+    /// (e.g. `SelectionChromeOverlay`) rather than the SelectionView's own
+    /// mouse handling. Mirrors `mouseDragged`'s `.resize` branch.
+    func resizeByExternalDrag(handle: HandlePosition, originalRect: NSRect, currentPoint: NSPoint) {
+        let newRect = SelectionView.resizedRect(
+            from: originalRect,
+            handle: handle,
+            currentPoint: currentPoint
+        )
+        selectionRect = newRect
+        state = .selected
+        delegate?.selectionDidChange(rect: newRect, inView: self)
+        needsDisplay = true
+    }
+
+    /// Mirror of `mouseUp`'s `.resize` finalize.
+    func finalizeExternalResize() {
+        if let rect = selectionRect {
+            delegate?.selectionDidComplete(rect: rect, inView: self)
+        }
+    }
+
     // MARK: - Mouse Events
 
     override func mouseDown(with event: NSEvent) {
@@ -208,7 +230,7 @@ class SelectionView: NSView {
             needsDisplay = true
 
         case .resize(let handle):
-            let newRect = resizedRect(from: dragOriginalRect, handle: handle, currentPoint: point)
+            let newRect = SelectionView.resizedRect(from: dragOriginalRect, handle: handle, currentPoint: point)
             selectionRect = newRect
             delegate?.selectionDidChange(rect: newRect, inView: self)
             needsDisplay = true
@@ -285,7 +307,7 @@ class SelectionView: NSView {
         // don't override the cursor elsewhere (let editor/toolbar handle it)
         if selectionLocked {
             if let handle = hitTestHandle(point: point, rect: rect) {
-                setCursorForHandle(handle)
+                SelectionView.setCursorForHandle(handle)
             } else {
                 NSCursor.arrow.set()
             }
@@ -293,7 +315,7 @@ class SelectionView: NSView {
         }
 
         if let handle = hitTestHandle(point: point, rect: rect) {
-            setCursorForHandle(handle)
+            SelectionView.setCursorForHandle(handle)
         } else if rect.contains(point) {
             if annotationToolActive {
                 NSCursor.crosshair.set()
@@ -423,7 +445,7 @@ class SelectionView: NSView {
     }
 
     private func drawHandles(context: CGContext, rect: NSRect) {
-        let positions = handlePositions(for: rect)
+        let positions = SelectionView.handlePositions(for: rect)
         for pos in positions {
             let handleRect = NSRect(
                 x: pos.x - handleSize / 2,
@@ -461,7 +483,7 @@ class SelectionView: NSView {
 
     // MARK: - Handle Positions
 
-    private func handlePositions(for rect: NSRect) -> [NSPoint] {
+    static func handlePositions(for rect: NSRect) -> [NSPoint] {
         let minX = rect.minX, midX = rect.midX, maxX = rect.maxX
         let minY = rect.minY, midY = rect.midY, maxY = rect.maxY
         return [
@@ -476,15 +498,15 @@ class SelectionView: NSView {
         ]
     }
 
-    private func hitTestHandle(point: NSPoint, rect: NSRect) -> HandlePosition? {
+    static func hitTestHandle(point: NSPoint, rect: NSRect, hitSize: CGFloat) -> HandlePosition? {
         let positions = handlePositions(for: rect)
         let handles = HandlePosition.allCases
         for (i, pos) in positions.enumerated() {
             let hitRect = NSRect(
-                x: pos.x - handleHitSize / 2,
-                y: pos.y - handleHitSize / 2,
-                width: handleHitSize,
-                height: handleHitSize
+                x: pos.x - hitSize / 2,
+                y: pos.y - hitSize / 2,
+                width: hitSize,
+                height: hitSize
             )
             if hitRect.contains(point) {
                 return handles[i]
@@ -493,9 +515,13 @@ class SelectionView: NSView {
         return nil
     }
 
+    private func hitTestHandle(point: NSPoint, rect: NSRect) -> HandlePosition? {
+        SelectionView.hitTestHandle(point: point, rect: rect, hitSize: handleHitSize)
+    }
+
     // MARK: - Resize Logic
 
-    private func resizedRect(from original: NSRect, handle: HandlePosition, currentPoint: NSPoint) -> NSRect {
+    static func resizedRect(from original: NSRect, handle: HandlePosition, currentPoint: NSPoint) -> NSRect {
         var minX = original.minX
         var minY = original.minY
         var maxX = original.maxX
@@ -529,7 +555,7 @@ class SelectionView: NSView {
 
     // MARK: - Cursor
 
-    private func setCursorForHandle(_ handle: HandlePosition) {
+    static func setCursorForHandle(_ handle: HandlePosition) {
         switch handle {
         case .topLeft, .bottomRight:
             NSCursor(image: NSImage(size: NSSize(width: 16, height: 16), flipped: false) { rect in

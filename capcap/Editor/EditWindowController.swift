@@ -4,6 +4,7 @@ class EditWindowController {
     private var canvasView: EditCanvasView?
     private var beautifyContainerView: BeautifyContainerView?
     private var canvasScrollView: EditorScrollView?
+    private var selectionChromeOverlay: SelectionChromeOverlay?
     private weak var hostSelectionView: SelectionView?
     private var toolbarView: ToolbarView?
     private var subToolbarView: NSView?
@@ -93,6 +94,16 @@ class EditWindowController {
         self.beautifyContainerView = container
         hostSelectionView.addSubview(scrollView)
 
+        // Sits above `scrollView` so the dashed border + handles stay
+        // visible when beautify expands the canvas frame with a gradient
+        // background. Only handle hits are claimed; everything else falls
+        // through to the canvas / SelectionView underneath.
+        let overlay = SelectionChromeOverlay(frame: hostSelectionView.bounds)
+        overlay.autoresizingMask = [.width, .height]
+        overlay.selectionView = hostSelectionView
+        hostSelectionView.addSubview(overlay)
+        self.selectionChromeOverlay = overlay
+
         showToolbar()
         bringEditorToFront()
     }
@@ -125,33 +136,28 @@ class EditWindowController {
         self.selectionViewRect = selectionViewRect
         self.captureRect = captureRect
 
-        canvasScrollView?.frame = selectionViewRect
         canvasView?.updateViewportSize(selectionViewRect.size)
         beautifyContainerView?.canvasSizeDidChange()
         canvasView?.captureRect = captureRect
         canvasView?.captureScreen = screen
+
+        // Beautify caches the cropped screenshot in `externalBaseImage` so the
+        // canvas can clip it to rounded corners. Without re-cropping here, a
+        // selection resize would just stretch the cached image to the new
+        // canvas frame instead of revealing a different region of the screen.
+        if isBeautifyActive,
+           let canvasView,
+           canvasView.previewImage == nil {
+            canvasView.externalBaseImage = canvasView.resolveBaseImageForEditing()
+        }
+
         canvasView?.needsDisplay = true
 
-        // Update toolbar position
-        if let hostSelectionView {
-            toolbarView?.frame = toolbarRect(in: hostSelectionView.bounds)
-        }
+        // Resize the scroll view (and beautified outer when active) before
+        // positioning floating chrome so toolbar anchors against the right rect.
+        updateCanvasFrameForBeautify()
 
-        // Update sub-toolbar position
-        updateSubToolbarPosition()
-
-        if isBeautifyActive {
-            updateCanvasFrameForBeautify()
-            if let hostSelectionView, let toolbarFrame = toolbarView?.frame {
-                let width = BeautifySubToolbar.preferredWidth(presetCount: BeautifyPreset.defaults.count)
-                beautifySubToolbarView?.frame = subToolbarRect(
-                    width: width,
-                    height: 36,
-                    toolbarFrame: toolbarFrame,
-                    in: hostSelectionView.bounds
-                )
-            }
-        }
+        repositionFloatingChrome()
     }
 
     private func selectTool(_ tool: EditTool) {
@@ -298,11 +304,42 @@ class EditWindowController {
             let toolbarFrame = toolbarView?.frame
         else { return }
 
+        // When the beautify gradient picker is up, keep the tool's color/size
+        // sub-toolbar shifted below it so the two rows don't overlap.
+        let offset: CGFloat = isBeautifyActive ? (36 + 4) : 0
         subToolbarView.frame = subToolbarRect(
             width: subToolbarView.frame.width,
             height: subToolbarView.frame.height,
             toolbarFrame: toolbarFrame,
-            in: hostSelectionView.bounds
+            in: hostSelectionView.bounds,
+            offset: offset
+        )
+    }
+
+    /// Reposition the main toolbar, beautify gradient row, tool color/size
+    /// row, and selection chrome overlay against the current `selectionViewRect`
+    /// and beautify state. Called whenever the underlying geometry changes —
+    /// beautify toggles, preset/padding changes, or the user resizes the
+    /// selection.
+    private func repositionFloatingChrome() {
+        guard let hostSelectionView else { return }
+        if let toolbarView {
+            toolbarView.frame = toolbarRect(in: hostSelectionView.bounds)
+        }
+        updateSubToolbarPosition()
+        if isBeautifyActive,
+           let toolbarFrame = toolbarView?.frame,
+           let beautifySub = beautifySubToolbarView {
+            beautifySub.frame = subToolbarRect(
+                width: beautifySub.frame.width,
+                height: beautifySub.frame.height,
+                toolbarFrame: toolbarFrame,
+                in: hostSelectionView.bounds
+            )
+        }
+        selectionChromeOverlay?.update(
+            rect: selectionViewRect,
+            active: isBeautifyActive && canvasView?.hasPreviewImage != true
         )
     }
 
@@ -364,10 +401,10 @@ class EditWindowController {
         isBeautifyActive = true
         toolbarView?.setBeautifyActive(true)
         showBeautifySubToolbar(selecting: preset)
-        repositionSubToolbarsForBeautify()
         Defaults.lastBeautifyPresetID = preset.id
 
         updateCanvasFrameForBeautify()
+        repositionFloatingChrome()
         updateEditorInteractionState()
         canvasView.needsDisplay = true
         bringEditorToFront()
@@ -387,11 +424,8 @@ class EditWindowController {
         beautifySubToolbarView?.removeFromSuperview()
         beautifySubToolbarView = nil
 
-        // The tool's sub-toolbar was shifted down while the gradient picker
-        // was above it; restore it to the normal slot.
-        repositionSubToolbarsForBeautify()
-
         updateCanvasFrameForBeautify()
+        repositionFloatingChrome()
         updateEditorInteractionState()
         canvasView.needsDisplay = true
         bringEditorToFront()
@@ -412,6 +446,7 @@ class EditWindowController {
         beautifySubToolbarView?.currentPresetID = preset.id
         canvasView?.needsDisplay = true
         updateCanvasFrameForBeautify()
+        repositionFloatingChrome()
     }
 
     private func applyBeautifyPadding(_ padding: CGFloat) {
@@ -419,27 +454,8 @@ class EditWindowController {
         Defaults.lastBeautifyPadding = Double(padding)
         beautifyContainerView?.setPadding(padding)
         updateCanvasFrameForBeautify()
+        repositionFloatingChrome()
         canvasView?.needsDisplay = true
-    }
-
-    /// Reposition the active annotation-tool sub-toolbar so it sits just
-    /// below the gradient picker when beautify is on (and back to the normal
-    /// slot directly below the main toolbar when beautify is off).
-    private func repositionSubToolbarsForBeautify() {
-        guard
-            let hostSelectionView,
-            let toolbarFrame = toolbarView?.frame,
-            let sub = subToolbarView
-        else { return }
-
-        let offset: CGFloat = isBeautifyActive ? (36 + 4) : 0
-        sub.frame = subToolbarRect(
-            width: sub.frame.width,
-            height: sub.frame.height,
-            toolbarFrame: toolbarFrame,
-            in: hostSelectionView.bounds,
-            offset: offset
-        )
     }
 
     private func showBeautifySubToolbar(selecting preset: BeautifyPreset) {
@@ -483,17 +499,7 @@ class EditWindowController {
         else { return }
 
         if isBeautifyActive {
-            let outer = container.outerSize
-            let overlayBounds = hostSelectionView.bounds
-            let targetWidth = min(outer.width, overlayBounds.width)
-            let targetHeight = min(outer.height, overlayBounds.height)
-            let centerX = selectionViewRect.midX
-            let centerY = selectionViewRect.midY
-            var x = centerX - targetWidth / 2
-            var y = centerY - targetHeight / 2
-            x = max(overlayBounds.minX, min(overlayBounds.maxX - targetWidth, x))
-            y = max(overlayBounds.minY, min(overlayBounds.maxY - targetHeight, y))
-            canvasScrollView.frame = NSRect(x: x, y: y, width: targetWidth, height: targetHeight)
+            canvasScrollView.frame = outerVisualRect(in: hostSelectionView.bounds)
         } else {
             canvasScrollView.frame = selectionViewRect
         }
@@ -504,6 +510,30 @@ class EditWindowController {
         canvasScrollView.reflectScrolledClipView(canvasScrollView.contentView)
         container.needsDisplay = true
         canvasView.needsDisplay = true
+    }
+
+    /// The on-screen rect of the canvas/scroll view. When beautify is on this
+    /// is the outer (gradient + inner image) rect, anchored so the inner
+    /// image stays exactly where the user drew the selection — the gradient
+    /// is allowed to spill past the screen edges rather than shifting the
+    /// inner image to fit. The `bounds` parameter is kept for call-site
+    /// symmetry; it isn't read here.
+    private func outerVisualRect(in bounds: NSRect) -> NSRect {
+        _ = bounds
+        guard isBeautifyActive, let container = beautifyContainerView else {
+            return selectionViewRect
+        }
+        let outer = container.outerSize
+        guard outer.width > 0, outer.height > 0 else {
+            return selectionViewRect
+        }
+        let p = container.customPadding ?? BeautifyRenderer.padding(for: container.innerImageSize)
+        return NSRect(
+            x: selectionViewRect.minX - p,
+            y: selectionViewRect.minY - p,
+            width: outer.width,
+            height: outer.height
+        )
     }
 
     // MARK: - Scroll Capture
@@ -676,6 +706,8 @@ class EditWindowController {
         canvasScrollView?.removeFromSuperview()
         canvasScrollView = nil
         canvasView = nil
+        selectionChromeOverlay?.removeFromSuperview()
+        selectionChromeOverlay = nil
         hostSelectionView?.annotationToolActive = false
         hostSelectionView?.selectionInteractionEnabled = true
         hostSelectionView?.scrollCaptureActive = false
@@ -791,7 +823,11 @@ class EditWindowController {
         // moved to a dedicated toolbar handle so adjust-mode clicks on
         // empty canvas don't get hijacked.
         hostSelectionView?.annotationToolActive = !isScrollCapturing
-        hostSelectionView?.selectionInteractionEnabled = !(isScrollCapturing || hasPreview || isBeautifyActive)
+        // When beautify is on, handle hits go through `selectionChromeOverlay`
+        // (which sits above the canvas); the SelectionView itself stays
+        // available for any clicks that fall outside the gradient frame so the
+        // user can still adjust the selection.
+        hostSelectionView?.selectionInteractionEnabled = !(isScrollCapturing || hasPreview)
         canvasScrollView?.isInteractionEnabled = (activeTool != .none) || hasPreview || isBeautifyActive
         hostSelectionView?.needsDisplay = true
     }
@@ -801,15 +837,16 @@ class EditWindowController {
         let height: CGFloat = 44
         let margin: CGFloat = 8
 
+        let referenceRect = outerVisualRect(in: bounds)
         let x = clampedX(
-            selectionViewRect.midX - width / 2,
+            referenceRect.midX - width / 2,
             width: width,
             in: bounds,
             margin: margin
         )
-        var y = selectionViewRect.minY - height - margin
+        var y = referenceRect.minY - height - margin
         if y < margin {
-            y = min(selectionViewRect.maxY + margin, bounds.maxY - height - margin)
+            y = min(referenceRect.maxY + margin, bounds.maxY - height - margin)
         }
         y = max(margin, min(bounds.maxY - height - margin, y))
 
@@ -2062,6 +2099,138 @@ private class BeautifySwatchView: NSView {
             accentGreen.setStroke()
             ring.lineWidth = 2
             ring.stroke()
+        }
+    }
+}
+
+// MARK: - Selection Chrome Overlay
+
+/// Sits above the editor's `canvasScrollView` (so the dashed border + handles
+/// stay visible even when beautify expands the canvas frame with a gradient
+/// background). Empty space falls through; only handle hits are claimed, and
+/// they drive `SelectionView`'s external resize API so the rest of the editor
+/// reuses the existing resize → relayout pipeline.
+final class SelectionChromeOverlay: NSView {
+    weak var selectionView: SelectionView?
+
+    private(set) var selectionRectInView: NSRect = .zero
+    private(set) var isActiveAndVisible: Bool = false
+
+    private let accentColor = NSColor(red: 0, green: 212.0/255.0, blue: 106.0/255.0, alpha: 1.0)
+    private let handleSize: CGFloat = 8
+    private let handleHitSize: CGFloat = 12
+    private let borderWidth: CGFloat = 2.0
+    private let dashPattern: [CGFloat] = [6, 4]
+
+    private var dragHandle: SelectionView.HandlePosition?
+    private var dragOriginalRect: NSRect = .zero
+
+    override var isFlipped: Bool { false }
+    override func acceptsFirstMouse(for event: NSEvent?) -> Bool { true }
+
+    func update(rect: NSRect, active: Bool) {
+        let changed = (rect != selectionRectInView) || (active != isActiveAndVisible)
+        selectionRectInView = rect
+        isActiveAndVisible = active
+        if changed {
+            needsDisplay = true
+        }
+    }
+
+    override func hitTest(_ point: NSPoint) -> NSView? {
+        guard isActiveAndVisible else { return nil }
+        // `point` is in the superview's coordinate space.
+        let local = convert(point, from: superview)
+        guard SelectionView.hitTestHandle(
+            point: local,
+            rect: selectionRectInView,
+            hitSize: handleHitSize
+        ) != nil else {
+            return nil
+        }
+        return self
+    }
+
+    override func mouseDown(with event: NSEvent) {
+        let point = convert(event.locationInWindow, from: nil)
+        guard let handle = SelectionView.hitTestHandle(
+            point: point,
+            rect: selectionRectInView,
+            hitSize: handleHitSize
+        ) else { return }
+        dragHandle = handle
+        dragOriginalRect = selectionRectInView
+        SelectionView.setCursorForHandle(handle)
+    }
+
+    override func mouseDragged(with event: NSEvent) {
+        guard let handle = dragHandle, let selectionView else { return }
+        let point = convert(event.locationInWindow, from: nil)
+        selectionView.resizeByExternalDrag(
+            handle: handle,
+            originalRect: dragOriginalRect,
+            currentPoint: point
+        )
+    }
+
+    override func mouseUp(with event: NSEvent) {
+        defer { dragHandle = nil }
+        guard dragHandle != nil, let selectionView else { return }
+        selectionView.finalizeExternalResize()
+    }
+
+    override func mouseMoved(with event: NSEvent) {
+        guard isActiveAndVisible else { return }
+        let point = convert(event.locationInWindow, from: nil)
+        if let handle = SelectionView.hitTestHandle(
+            point: point,
+            rect: selectionRectInView,
+            hitSize: handleHitSize
+        ) {
+            SelectionView.setCursorForHandle(handle)
+        }
+    }
+
+    override func updateTrackingAreas() {
+        super.updateTrackingAreas()
+        for area in trackingAreas {
+            removeTrackingArea(area)
+        }
+        let area = NSTrackingArea(
+            rect: bounds,
+            options: [.mouseMoved, .activeAlways, .mouseEnteredAndExited, .inVisibleRect],
+            owner: self,
+            userInfo: nil
+        )
+        addTrackingArea(area)
+    }
+
+    override func draw(_ dirtyRect: NSRect) {
+        guard isActiveAndVisible,
+              selectionRectInView.width > 0,
+              selectionRectInView.height > 0,
+              let context = NSGraphicsContext.current?.cgContext
+        else { return }
+
+        let rect = selectionRectInView
+        context.saveGState()
+        defer { context.restoreGState() }
+
+        context.setStrokeColor(accentColor.cgColor)
+        context.setLineWidth(borderWidth)
+        context.setLineDash(phase: 0, lengths: dashPattern)
+        context.stroke(rect.insetBy(dx: -1, dy: -1))
+        context.setLineDash(phase: 0, lengths: [])
+
+        for pos in SelectionView.handlePositions(for: rect) {
+            let handleRect = NSRect(
+                x: pos.x - handleSize / 2,
+                y: pos.y - handleSize / 2,
+                width: handleSize,
+                height: handleSize
+            )
+            context.setFillColor(accentColor.cgColor)
+            context.fillEllipse(in: handleRect)
         }
     }
 }
