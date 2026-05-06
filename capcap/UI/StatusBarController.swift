@@ -107,6 +107,13 @@ class StatusBarController: NSObject {
         guard let entry = entry else { return }
         switch entry.kind {
         case .image:
+            if let cloudURL = entry.cloudURL {
+                let pasteboard = NSPasteboard.general
+                pasteboard.clearContents()
+                pasteboard.setString(cloudURL.absoluteString, forType: .string)
+                ToastWindow.show(message: L10n.uploadCopied)
+                return
+            }
             guard let image = NSImage(contentsOf: entry.fileURL) else { return }
             ClipboardManager.copyToClipboard(image: image)
             ToastWindow.show()
@@ -145,9 +152,13 @@ extension StatusBarController: NSMenuDelegate {
 
         for entry in entries {
             let item = NSMenuItem()
+            var timestamp = formatter.string(from: entry.createdAt)
+            if entry.cloudURL != nil {
+                timestamp += " ☁️"
+            }
             let row = HistoryMenuRow(
                 entry: entry,
-                timestamp: formatter.string(from: entry.createdAt),
+                timestamp: timestamp,
                 target: self,
                 action: #selector(historyItemClicked(_:))
             )

@@ -9,7 +9,10 @@ struct HistoryEntry {
     let fileURL: URL
     let createdAt: Date
     let kind: HistoryEntryKind
+    let cloudURL: URL?
 }
+
+private let cloudURLXattrKey = "com.capcap.cloudURL"
 
 final class HistoryManager {
     static let shared = HistoryManager()
@@ -45,7 +48,7 @@ final class HistoryManager {
         }
     }
 
-    func add(image: NSImage) {
+    func add(image: NSImage, cloudURL: URL? = nil) {
         guard let data = image.pngDataPreservingBacking() else { return }
         queue.async { [weak self] in
             guard let self = self else { return }
@@ -55,6 +58,9 @@ final class HistoryManager {
                 try data.write(to: url, options: .atomic)
             } catch {
                 return
+            }
+            if let cloudURL = cloudURL {
+                Self.writeCloudURLXattr(cloudURL, on: url)
             }
             self.pruneToLimit()
             DispatchQueue.main.async {
@@ -95,12 +101,13 @@ final class HistoryManager {
             let date = (try? url.resourceValues(forKeys: [.contentModificationDateKey]).contentModificationDate) ?? .distantPast
             switch ext {
             case "png":
-                return HistoryEntry(fileURL: url, createdAt: date, kind: .image)
+                let cloudURL = Self.readCloudURLXattr(on: url)
+                return HistoryEntry(fileURL: url, createdAt: date, kind: .image, cloudURL: cloudURL)
             case "color":
                 guard let hex = try? String(contentsOf: url, encoding: .utf8) else { return nil }
                 let trimmed = hex.trimmingCharacters(in: .whitespacesAndNewlines)
                 guard !trimmed.isEmpty else { return nil }
-                return HistoryEntry(fileURL: url, createdAt: date, kind: .color(hex: trimmed))
+                return HistoryEntry(fileURL: url, createdAt: date, kind: .color(hex: trimmed), cloudURL: nil)
             default:
                 return nil
             }
@@ -133,6 +140,31 @@ final class HistoryManager {
         let fm = FileManager.default
         for extra in all.dropFirst(limit) {
             try? fm.removeItem(at: extra.fileURL)
+        }
+    }
+
+    private static func writeCloudURLXattr(_ cloudURL: URL, on fileURL: URL) {
+        let value = cloudURL.absoluteString
+        fileURL.withUnsafeFileSystemRepresentation { fsPath in
+            guard let fsPath = fsPath else { return }
+            value.withCString { cstr in
+                _ = setxattr(fsPath, cloudURLXattrKey, cstr, strlen(cstr), 0, 0)
+            }
+        }
+    }
+
+    private static func readCloudURLXattr(on fileURL: URL) -> URL? {
+        return fileURL.withUnsafeFileSystemRepresentation { fsPath -> URL? in
+            guard let fsPath = fsPath else { return nil }
+            let size = getxattr(fsPath, cloudURLXattrKey, nil, 0, 0, 0)
+            guard size > 0 else { return nil }
+            var buf = [UInt8](repeating: 0, count: size)
+            let read = buf.withUnsafeMutableBytes { raw -> ssize_t in
+                getxattr(fsPath, cloudURLXattrKey, raw.baseAddress, raw.count, 0, 0)
+            }
+            guard read > 0 else { return nil }
+            guard let str = String(bytes: buf[0..<read], encoding: .utf8) else { return nil }
+            return URL(string: str)
         }
     }
 
