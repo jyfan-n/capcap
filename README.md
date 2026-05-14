@@ -1,5 +1,7 @@
 # capcap
 
+![capcap](images/app-banner.png)
+
 [中文说明](README.zh-CN.md)
 
 **The fastest way to grab, mark up, and share screenshots on macOS.** Double-tap `⌘` from anywhere — snap to a window, drag a region, scroll-stitch a long page, then annotate and beautify in one tight floating window. Lives in your menu bar. No Dock icon, no telemetry, no subscription, no third-party dependencies. Bring your own object storage if you want a one-click cloud URL.
