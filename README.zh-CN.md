@@ -207,6 +207,10 @@ bash scripts/compile-check.sh
 bash scripts/rebuild-and-open.sh
 ```
 
+## 致谢
+
+感谢 Linux.do 社区在测试、反馈和讨论中的支持。
+
 ## License
 
 MIT
