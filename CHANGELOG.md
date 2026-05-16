@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.1.3] - 2026-05-16
+
+### Added
+- `feat(update): add GitHub release update detection` (c558475)
+- `feat(settings): add About tab with version and open-source info` (6ebfa66)
+- `feat(image-edit): add X shortcut to bail out of stale Finder selection` (52cf64b)
+
 ## [1.1.2] - 2026-05-16
 
 ### Added
