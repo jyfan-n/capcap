@@ -82,6 +82,13 @@ jobs:
           cp "$BUILD_DIR/$APP_NAME" "$MACOS/$APP_NAME"
           cp "capcap/App/Info.plist" "$CONTENTS/Info.plist"
 
+          # Copy app icon — Info.plist declares CFBundleIconFile=AppIcon, so the
+          # bundle needs Resources/AppIcon.icns or it ships with no icon.
+          if [ ! -f "Resources/AppIcon.icns" ]; then
+            echo "error: Resources/AppIcon.icns missing" >&2; exit 1
+          fi
+          cp "Resources/AppIcon.icns" "$RESOURCES/AppIcon.icns"
+
           # Fail fast if the shipped binary isn't a universal (arm64 + x86_64)
           # slice — Intel Mac users can't run an arm64-only build.
           ARCHS="$(lipo -archs "$MACOS/$APP_NAME")"
