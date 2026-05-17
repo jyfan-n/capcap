@@ -98,15 +98,29 @@ class StatusBarController: NSObject {
         onOpenSettings()
     }
 
-    /// Builds the update menu item — a passive "new version" entry when one is
-    /// known, otherwise a "Check for Updates" action.
+    /// Builds the update menu item — its title and action track the current
+    /// state: an installable "new version" entry, a passive download/install
+    /// progress line, or a "Check for Updates" action.
     private func makeUpdateMenuItem() -> NSMenuItem {
         let item: NSMenuItem
         switch UpdateChecker.shared.state {
-        case .available(let version, _):
+        case .available(let version):
             item = NSMenuItem(title: L10n.updateAvailableMenu(version),
-                              action: #selector(openLatestRelease), keyEquivalent: "")
+                              action: #selector(updateMenuItemClicked), keyEquivalent: "")
             item.image = Self.menuIcon(systemName: "arrow.down.circle.fill")
+        case .downloading(_, let fraction):
+            item = NSMenuItem(title: L10n.updateDownloadingMenu(Int(fraction * 100)),
+                              action: nil, keyEquivalent: "")
+            item.isEnabled = false
+            item.image = Self.menuIcon(systemName: "arrow.down.circle")
+        case .installing:
+            item = NSMenuItem(title: L10n.updateInstallingMenu, action: nil, keyEquivalent: "")
+            item.isEnabled = false
+            item.image = Self.menuIcon(systemName: "arrow.down.circle")
+        case .installFailed:
+            item = NSMenuItem(title: L10n.updateInstallFailedMenu,
+                              action: #selector(updateMenuItemClicked), keyEquivalent: "")
+            item.image = Self.menuIcon(systemName: "exclamationmark.triangle")
         case .checking:
             item = NSMenuItem(title: L10n.checkingForUpdatesMenu, action: nil, keyEquivalent: "")
             item.isEnabled = false
@@ -126,41 +140,80 @@ class StatusBarController: NSObject {
         }
     }
 
-    @objc private func openLatestRelease() {
-        if case .available(_, let url) = UpdateChecker.shared.state {
-            NSWorkspace.shared.open(url)
+    /// Handles a click on the update menu item once a release is known: offers
+    /// the install prompt, or — after a failed install — the release page.
+    @objc private func updateMenuItemClicked() {
+        switch UpdateChecker.shared.state {
+        case .available(let version):
+            Self.presentUpdateAvailableAlert(version: version)
+        case .installFailed:
+            if let url = UpdateChecker.shared.latestPageURL {
+                NSWorkspace.shared.open(url)
+            }
+        default:
+            break
         }
     }
 
     /// Reports the outcome of a user-initiated check with a standard alert.
     /// Background launch checks stay silent and only update the menu item.
     private static func presentManualCheckResult(_ state: UpdateState) {
-        let alert = NSAlert()
         switch state {
-        case .available(let version, let url):
-            alert.messageText = L10n.updateAvailableTitle(version)
-            alert.informativeText = L10n.updateAvailableBody
-            alert.addButton(withTitle: L10n.updateDownloadButton)
-            alert.addButton(withTitle: L10n.updateLaterButton)
-            NSApp.activate(ignoringOtherApps: true)
-            if alert.runModal() == .alertFirstButtonReturn {
-                NSWorkspace.shared.open(url)
-            }
+        case .available(let version):
+            presentUpdateAvailableAlert(version: version)
         case .upToDate:
+            let alert = NSAlert()
             alert.messageText = L10n.updateUpToDateTitle
             alert.informativeText = L10n.updateUpToDateBody(UpdateChecker.shared.currentVersion)
             alert.addButton(withTitle: L10n.updateOKButton)
             NSApp.activate(ignoringOtherApps: true)
             alert.runModal()
         case .failed:
+            let alert = NSAlert()
             alert.messageText = L10n.updateFailedTitle
             alert.informativeText = L10n.updateFailedBody
             alert.addButton(withTitle: L10n.updateOKButton)
             NSApp.activate(ignoringOtherApps: true)
             alert.runModal()
-        case .idle, .checking:
-            // A check was already in flight — nothing to report yet.
+        case .idle, .checking, .downloading, .installing, .installFailed:
+            // Either a check was already in flight, or an install is being
+            // driven elsewhere — nothing to report here.
             break
+        }
+    }
+
+    /// Prompts the user to install a newer release. The download/install runs
+    /// in the background; on success the app relaunches itself.
+    static func presentUpdateAvailableAlert(version: String) {
+        let alert = NSAlert()
+        alert.messageText = L10n.updateAvailableTitle(version)
+        alert.informativeText = L10n.updateAvailableBody
+        alert.addButton(withTitle: L10n.updateInstallNowButton)
+        alert.addButton(withTitle: L10n.updateSkipButton)
+        alert.addButton(withTitle: L10n.updateLaterButton)
+        NSApp.activate(ignoringOtherApps: true)
+        switch alert.runModal() {
+        case .alertFirstButtonReturn:
+            UpdateChecker.shared.downloadAndInstall(onFailure: presentInstallFailedAlert)
+        case .alertSecondButtonReturn:
+            UpdateChecker.shared.skipVersion()
+        default:
+            break
+        }
+    }
+
+    /// Shown when a download or install fails — offers the release page as a
+    /// manual fallback.
+    static func presentInstallFailedAlert() {
+        let alert = NSAlert()
+        alert.messageText = L10n.updateInstallFailedTitle
+        alert.informativeText = L10n.updateInstallFailedBody
+        alert.addButton(withTitle: L10n.updateOpenPageButton)
+        alert.addButton(withTitle: L10n.updateOKButton)
+        NSApp.activate(ignoringOtherApps: true)
+        if alert.runModal() == .alertFirstButtonReturn,
+           let url = UpdateChecker.shared.latestPageURL {
+            NSWorkspace.shared.open(url)
         }
     }
 

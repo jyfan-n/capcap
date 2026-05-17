@@ -1,28 +1,37 @@
+import AppKit
 import Foundation
 
-/// Outcome of an update check. Drives the menu bar item and the About pane.
+/// Outcome of an update check / install. Drives the menu bar item and the
+/// About pane.
 enum UpdateState: Equatable {
     case idle
     case checking
     case upToDate
-    case available(version: String, url: URL)
+    case available(version: String)
+    case downloading(version: String, fraction: Double)
+    case installing(version: String)
     case failed
+    case installFailed(version: String)
 }
 
 extension Notification.Name {
     static let updateStateDidChange = Notification.Name("capcap.updateStateDidChange")
 }
 
-/// Checks GitHub Releases for a newer capcap version.
+/// Checks GitHub Releases for a newer capcap version and, when asked, downloads
+/// and installs it in place.
 ///
-/// Notify-only by design: capcap ships unsigned (see release.yml), so it never
-/// downloads or installs an update itself — it points the user at the GitHub
-/// release page and lets them (or Homebrew) take it from there.
+/// The release zip is signed with capcap's reusable self-signed certificate
+/// (see release.yml), so an in-place swap keeps a stable code-signing identity
+/// and the user's TCC permissions survive the update. `UpdateInstaller` does
+/// the download/unzip/swap; this type owns the state machine and the GitHub
+/// API parsing.
 final class UpdateChecker {
     static let shared = UpdateChecker()
 
     private let repo = "realskyrin/capcap"
     private let throttleKey = "lastUpdateCheckAt"
+    private let skippedVersionKey = "skippedUpdateVersion"
     private let throttleInterval: TimeInterval = 24 * 60 * 60
 
     private(set) var state: UpdateState = .idle {
@@ -31,11 +40,32 @@ final class UpdateChecker {
         }
     }
 
+    /// Details of the latest release, populated by a successful check. Kept
+    /// outside `UpdateState` so the enum stays trivially `Equatable`.
+    private(set) var latestVersion: String?
+    private(set) var latestZipURL: URL?
+    private(set) var latestSHA256URL: URL?
+    private(set) var latestPageURL: URL?
+
     private init() {}
 
     /// Running app version, e.g. "1.1.2".
     var currentVersion: String {
         Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "0"
+    }
+
+    /// The version the user chose to skip, if any.
+    var skippedVersion: String? {
+        UserDefaults.standard.string(forKey: skippedVersionKey)
+    }
+
+    /// True while a check or install is in flight — used to reject overlapping
+    /// requests.
+    private var isBusy: Bool {
+        switch state {
+        case .checking, .downloading, .installing: return true
+        default: return false
+        }
     }
 
     /// Background check fired on launch. Skipped if a check already ran within
@@ -49,9 +79,10 @@ final class UpdateChecker {
     }
 
     /// Performs a check. `completion` fires on the main thread with the final
-    /// state. Manual checks ignore the 24h throttle.
+    /// state. Manual checks ignore the 24h throttle and the skipped-version
+    /// preference; a background check stays silent about a skipped version.
     func check(manual: Bool, completion: ((UpdateState) -> Void)? = nil) {
-        guard state != .checking else {
+        guard !isBusy else {
             completion?(state)
             return
         }
@@ -85,14 +116,115 @@ final class UpdateChecker {
             }
 
             let latest = Self.normalizeVersion(tag)
+            let assets = json["assets"] as? [[String: Any]] ?? []
             let pageURL = (json["html_url"] as? String).flatMap(URL.init)
                 ?? URL(string: "https://github.com/\(self.repo)/releases/latest")!
 
-            if Self.isVersion(latest, newerThan: self.currentVersion) {
-                self.finish(.available(version: latest, url: pageURL), completion: completion)
-            } else {
+            guard Self.isVersion(latest, newerThan: self.currentVersion) else {
                 self.finish(.upToDate, completion: completion)
+                return
             }
+
+            self.latestVersion = latest
+            self.latestPageURL = pageURL
+            self.latestZipURL = Self.assetURL(in: assets) { $0.hasSuffix(".zip") }
+            self.latestSHA256URL = Self.assetURL(in: assets) { $0.hasSuffix(".zip.sha256") }
+
+            // A background check stays quiet about a version the user skipped;
+            // a manual check always reports it.
+            if !manual, latest == self.skippedVersion {
+                self.finish(.upToDate, completion: completion)
+            } else {
+                self.finish(.available(version: latest), completion: completion)
+            }
+        }.resume()
+    }
+
+    /// Marks the latest release as skipped so future background checks ignore
+    /// it, and resets the UI to the up-to-date state.
+    func skipVersion() {
+        guard let version = latestVersion else { return }
+        UserDefaults.standard.set(version, forKey: skippedVersionKey)
+        setState(.upToDate)
+    }
+
+    /// Downloads the latest release, verifies it, installs it in place of the
+    /// running app, and relaunches. `onFailure` fires on the main thread if any
+    /// step fails — the running app is left untouched. On success the app
+    /// terminates and the detached helper reopens the new build.
+    func downloadAndInstall(onFailure: (() -> Void)? = nil) {
+        guard case .available(let version) = state else { return }
+
+        // No installable asset (e.g. a release still publishing) — fall back to
+        // the release page so the user can grab it manually.
+        guard let zipURL = latestZipURL else {
+            if let page = latestPageURL { NSWorkspace.shared.open(page) }
+            return
+        }
+
+        setState(.downloading(version: version, fraction: 0))
+
+        let fail: () -> Void = { [weak self] in
+            self?.setState(.installFailed(version: version))
+            onFailure?()
+        }
+
+        fetchExpectedHash { [weak self] expectedHash in
+            guard let self = self else { return }
+            var lastPercent = -1
+            UpdateInstaller.shared.downloadZip(
+                from: zipURL,
+                progress: { fraction in
+                    // Throttle to whole-percent steps so the menu/About pane
+                    // don't rebuild on every byte.
+                    let percent = Int(fraction * 100)
+                    guard percent != lastPercent else { return }
+                    lastPercent = percent
+                    self.setState(.downloading(version: version, fraction: fraction))
+                },
+                completion: { result in
+                    switch result {
+                    case .failure:
+                        fail()
+                    case .success(let zipPath):
+                        self.setState(.installing(version: version))
+                        DispatchQueue.global(qos: .userInitiated).async {
+                            do {
+                                try UpdateInstaller.install(zipAt: zipPath,
+                                                            expectedSHA256: expectedHash)
+                                DispatchQueue.main.async { NSApp.terminate(nil) }
+                            } catch {
+                                DispatchQueue.main.async { fail() }
+                            }
+                        }
+                    }
+                }
+            )
+        }
+    }
+
+    /// Fetches the `.sha256` companion asset so the download can be verified.
+    /// Best-effort: a missing or unreadable checksum yields nil and the install
+    /// proceeds without verification rather than failing outright.
+    private func fetchExpectedHash(_ completion: @escaping (String?) -> Void) {
+        guard let url = latestSHA256URL else {
+            completion(nil)
+            return
+        }
+        var request = URLRequest(url: url)
+        request.timeoutInterval = 15
+        request.setValue("capcap/\(currentVersion)", forHTTPHeaderField: "User-Agent")
+        URLSession.shared.dataTask(with: request) { data, response, _ in
+            guard let http = response as? HTTPURLResponse, http.statusCode == 200,
+                  let data = data,
+                  let text = String(data: data, encoding: .utf8)
+            else {
+                completion(nil)
+                return
+            }
+            // The file holds "<hash>  <filename>"; take the first token.
+            let hash = text.split(whereSeparator: { " \t\n".contains($0) }).first
+            completion(hash.map(String.init))
         }.resume()
     }
 
@@ -109,6 +241,21 @@ final class UpdateChecker {
         } else {
             DispatchQueue.main.async { self.state = newState }
         }
+    }
+
+    /// Returns the download URL of the first release asset whose name matches.
+    private static func assetURL(
+        in assets: [[String: Any]],
+        where matches: (String) -> Bool
+    ) -> URL? {
+        for asset in assets {
+            guard let name = asset["name"] as? String, matches(name),
+                  let urlString = asset["browser_download_url"] as? String,
+                  let url = URL(string: urlString)
+            else { continue }
+            return url
+        }
+        return nil
     }
 
     /// Strips a leading `release-v` / `v` from a tag — capcap tags releases as

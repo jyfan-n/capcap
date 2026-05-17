@@ -177,12 +177,27 @@ enum L10n {
     static var updateFailedStatus: String { lang == .zh ? "检查失败" : "Check failed" }
     static var updateDownloadButton: String { lang == .zh ? "前往下载" : "Download" }
     static var updateRetryButton: String { lang == .zh ? "重试" : "Retry" }
+    static var updateInstallNowButton: String { lang == .zh ? "立即更新" : "Update Now" }
+    static func updateDownloadingStatus(_ percent: Int) -> String {
+        lang == .zh ? "下载中 \(percent)%" : "Downloading \(percent)%"
+    }
+    static var updateInstallingStatus: String { lang == .zh ? "正在安装…" : "Installing…" }
+    static var updateInstallFailedStatus: String { lang == .zh ? "安装失败" : "Install failed" }
 
     // Updates — menu bar
     static var checkForUpdatesMenu: String { lang == .zh ? "检查更新…" : "Check for Updates…" }
     static var checkingForUpdatesMenu: String { lang == .zh ? "正在检查更新…" : "Checking for Updates…" }
     static func updateAvailableMenu(_ v: String) -> String {
         lang == .zh ? "有新版本 v\(v)" : "New Version v\(v) Available"
+    }
+    static func updateDownloadingMenu(_ percent: Int) -> String {
+        lang == .zh ? "正在下载更新… \(percent)%" : "Downloading Update… \(percent)%"
+    }
+    static var updateInstallingMenu: String {
+        lang == .zh ? "正在安装更新…" : "Installing Update…"
+    }
+    static var updateInstallFailedMenu: String {
+        lang == .zh ? "更新安装失败" : "Update Install Failed"
     }
 
     // Updates — manual check result alert
@@ -191,8 +206,8 @@ enum L10n {
     }
     static var updateAvailableBody: String {
         lang == .zh
-            ? "前往 GitHub 发布页面下载并安装最新版本。"
-            : "Open the GitHub releases page to download and install the latest version."
+            ? "capcap 将自动下载并安装最新版本，完成后会自动重启。"
+            : "capcap will download and install the latest version, then relaunch automatically."
     }
     static var updateUpToDateTitle: String { lang == .zh ? "已是最新版本" : "You're up to date" }
     static func updateUpToDateBody(_ v: String) -> String {
@@ -204,6 +219,16 @@ enum L10n {
             ? "无法连接到 GitHub，请检查网络后重试。"
             : "Could not reach GitHub. Check your connection and try again."
     }
+    static var updateInstallFailedTitle: String {
+        lang == .zh ? "更新安装失败" : "Update failed"
+    }
+    static var updateInstallFailedBody: String {
+        lang == .zh
+            ? "下载或安装更新时出错。你可以前往 GitHub 发布页面手动下载。"
+            : "Something went wrong while downloading or installing the update. You can download it manually from the GitHub releases page."
+    }
+    static var updateOpenPageButton: String { lang == .zh ? "前往 GitHub" : "Open GitHub" }
+    static var updateSkipButton: String { lang == .zh ? "跳过此版本" : "Skip This Version" }
     static var updateLaterButton: String { lang == .zh ? "稍后" : "Later" }
     static var updateOKButton: String { lang == .zh ? "好" : "OK" }
 

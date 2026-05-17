@@ -1060,7 +1060,7 @@ class SettingsView: NSView {
     }
 
     /// "Updates" row — a status label plus a button whose role tracks state:
-    /// "Check for Updates" normally, "Download" once a newer release is found.
+    /// "Check for Updates" normally, "Update Now" once a newer release is found.
     private func makeUpdateRow() -> NSView {
         let row = NSView()
         row.translatesAutoresizingMaskIntoConstraints = false
@@ -1105,9 +1105,14 @@ class SettingsView: NSView {
     }
 
     @objc private func aboutUpdateButtonClicked() {
-        if case .available(_, let url) = UpdateChecker.shared.state {
-            NSWorkspace.shared.open(url)
-        } else {
+        switch UpdateChecker.shared.state {
+        case .available(let version):
+            StatusBarController.presentUpdateAvailableAlert(version: version)
+        case .installFailed:
+            if let url = UpdateChecker.shared.latestPageURL {
+                NSWorkspace.shared.open(url)
+            }
+        default:
             UpdateChecker.shared.check(manual: true)
         }
     }
@@ -1135,15 +1140,30 @@ class SettingsView: NSView {
             statusLabel.textColor = dim
             button.title = L10n.checkForUpdates
             button.isEnabled = true
-        case .available(let version, _):
+        case .available(let version):
             statusLabel.stringValue = L10n.updateNewVersionStatus(version)
             statusLabel.textColor = accent
-            button.title = L10n.updateDownloadButton
+            button.title = L10n.updateInstallNowButton
             button.isEnabled = true
+        case .downloading(_, let fraction):
+            statusLabel.stringValue = L10n.updateDownloadingStatus(Int(fraction * 100))
+            statusLabel.textColor = accent
+            button.title = L10n.updateInstallNowButton
+            button.isEnabled = false
+        case .installing:
+            statusLabel.stringValue = L10n.updateInstallingStatus
+            statusLabel.textColor = accent
+            button.title = L10n.updateInstallNowButton
+            button.isEnabled = false
         case .failed:
             statusLabel.stringValue = L10n.updateFailedStatus
             statusLabel.textColor = warn
             button.title = L10n.updateRetryButton
+            button.isEnabled = true
+        case .installFailed:
+            statusLabel.stringValue = L10n.updateInstallFailedStatus
+            statusLabel.textColor = warn
+            button.title = L10n.updateDownloadButton
             button.isEnabled = true
         }
     }
