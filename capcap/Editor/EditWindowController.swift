@@ -135,9 +135,10 @@ class EditWindowController {
 
     private func showToolbar() {
         guard let hostSelectionView else { return }
-        let toolbarRect = toolbarRect(in: hostSelectionView.bounds)
+        let layout = Defaults.toolbarLayout
 
-        let tv = ToolbarView(frame: toolbarRect)
+        let tv = ToolbarView(items: layout.primary, orientation: .horizontal)
+        tv.frame = toolbarRect(in: hostSelectionView.bounds, size: tv.preferredSize)
         tv.onToolSelected = { [weak self] tool in self?.selectTool(tool) }
         tv.onUndo = { [weak self] in self?.canvasView?.undo() }
         tv.onRedo = { [weak self] in self?.canvasView?.redo() }
@@ -434,7 +435,10 @@ class EditWindowController {
     private func repositionFloatingChrome() {
         guard let hostSelectionView else { return }
         if let toolbarView {
-            toolbarView.frame = toolbarRect(in: hostSelectionView.bounds)
+            toolbarView.frame = toolbarRect(
+                in: hostSelectionView.bounds,
+                size: toolbarView.preferredSize
+            )
         }
         updateSubToolbarPosition()
         if isBeautifyActive,
@@ -1091,9 +1095,9 @@ class EditWindowController {
         hostSelectionView?.needsDisplay = true
     }
 
-    private func toolbarRect(in bounds: NSRect) -> NSRect {
-        let width: CGFloat = ToolbarView.preferredWidth
-        let height: CGFloat = 44
+    private func toolbarRect(in bounds: NSRect, size: NSSize) -> NSRect {
+        let width = size.width
+        let height = size.height
         let margin: CGFloat = 8
 
         let referenceRect = outerVisualRect(in: bounds)
@@ -1178,20 +1182,35 @@ private final class EditorScrollView: NSScrollView {
     }
 }
 
+/// A row (horizontal) or column (vertical) of editor buttons built from a
+/// `[ToolbarItemID]`. Both the primary toolbar and the side toolbar are
+/// instances of this class — only `orientation` and the item list differ.
 class ToolbarView: NSView {
-    /// Single source of truth for the button row geometry. `toolbarRect` and
-    /// `setupButtons` both read these so the dark capsule always wraps the
-    /// full button row regardless of how many buttons we add.
+    enum Orientation { case horizontal, vertical }
+
+    /// Button run geometry. `preferredSize` derives the capsule size from
+    /// these so the dark background always wraps the buttons exactly.
     static let buttonSize: CGFloat = 32
     static let buttonSpacing: CGFloat = 6
-    static let separatorWidth: CGFloat = 8
-    static let totalButtons: Int = 20
-    static let horizontalPadding: CGFloat = 15
+    /// Inset along the main axis at both ends of the run.
+    static let endPadding: CGFloat = 15
+    /// Inset on the cross axis — keeps a 44pt-thick capsule around 32pt buttons.
+    static let crossPadding: CGFloat = 6
 
-    static var preferredWidth: CGFloat {
-        let buttonsWidth = CGFloat(totalButtons) * buttonSize
-            + CGFloat(totalButtons - 1) * buttonSpacing
-        return buttonsWidth + separatorWidth + horizontalPadding * 2
+    let orientation: Orientation
+    private let items: [ToolbarItemID]
+
+    /// Size that fits the current items in the current orientation.
+    var preferredSize: NSSize {
+        let n = items.count
+        let run = CGFloat(n) * Self.buttonSize
+            + CGFloat(max(0, n - 1)) * Self.buttonSpacing
+            + Self.endPadding * 2
+        let thickness = Self.buttonSize + Self.crossPadding * 2
+        switch orientation {
+        case .horizontal: return NSSize(width: max(run, thickness), height: thickness)
+        case .vertical:   return NSSize(width: thickness, height: max(run, thickness))
+        }
     }
 
     var onToolSelected: ((EditTool) -> Void)?
@@ -1214,16 +1233,18 @@ class ToolbarView: NSView {
     var onMoveSelectionDrag: ((CGSize) -> Void)?
     var onMoveSelectionEnd: (() -> Void)?
 
-    private var toolButtons: [(EditTool, ToolButton)] = []
-    private var scrollCaptureBtn: ToolButton?
-    private var beautifyBtn: ToolButton?
-    /// Last tool the controller selected. We track it so a second click on
-    /// the already-selected tool button can toggle back to "no tool" (adjust
-    /// mode) instead of re-selecting it.
+    /// Every button keyed by its id — drives selection state, enable/disable,
+    /// and frame lookups. `MoveSelectionDragHandle` values are not `ToolButton`s.
+    private var buttons: [ToolbarItemID: NSView] = [:]
+    /// Last tool the controller selected. Tracked so a second click on the
+    /// already-selected tool button toggles back to "no tool" (adjust mode).
     private var currentTool: EditTool = .none
 
-    override init(frame: NSRect) {
-        super.init(frame: frame)
+    init(items: [ToolbarItemID], orientation: Orientation) {
+        self.items = items
+        self.orientation = orientation
+        super.init(frame: NSRect(origin: .zero, size: .zero))
+        setFrameSize(preferredSize)
         setupButtons()
     }
 
@@ -1235,209 +1256,85 @@ class ToolbarView: NSView {
 
     func updateSelection(tool: EditTool) {
         currentTool = tool
-        for (btnTool, btn) in toolButtons {
-            btn.isSelected = (btnTool == tool)
+        for (id, view) in buttons {
+            guard id.kind == .toggleTool, let btn = view as? ToolButton else { continue }
+            btn.isSelected = (id.editTool == tool)
         }
     }
 
+    /// Sets the active highlight on a stateful button (scroll capture,
+    /// beautify). No-op if this toolbar doesn't hold the item.
+    func setActive(_ active: Bool, for id: ToolbarItemID) {
+        (buttons[id] as? ToolButton)?.isSelected = active
+    }
+
+    /// Enables/disables a button and dims it when disabled.
+    func setEnabled(_ enabled: Bool, for id: ToolbarItemID) {
+        guard let btn = buttons[id] as? ToolButton else { return }
+        btn.isEnabled = enabled
+        btn.alphaValue = enabled ? 1.0 : 0.35
+    }
+
+    /// `true` if this toolbar holds the given item.
+    func contains(_ id: ToolbarItemID) -> Bool { buttons[id] != nil }
+
+    /// Frame of an item's button in this toolbar's coordinate space.
+    func frame(for id: ToolbarItemID) -> NSRect? { buttons[id]?.frame }
+
+    // Convenience wrappers so callers don't repeat the id literals.
+    func setScrollCaptureActive(_ active: Bool) { setActive(active, for: .scrollCapture) }
+    func setScrollCaptureEnabled(_ enabled: Bool) { setEnabled(enabled, for: .scrollCapture) }
+    func setBeautifyActive(_ active: Bool) { setActive(active, for: .beautify) }
+    var scrollCaptureButtonFrame: NSRect? { frame(for: .scrollCapture) }
+
     private func setupButtons() {
-        // 20 buttons: rect, ellipse, arrow, pen, marker, mosaic, numbered, text, colorPicker, undo, redo, moveSelection, scrollCapture, beautify, ocr | save, upload, pin, cancel, confirm
-        let buttonSize = Self.buttonSize
-        let spacing = Self.buttonSpacing
-        let separatorWidth = Self.separatorWidth
-        let totalWidth = CGFloat(Self.totalButtons) * buttonSize
-            + CGFloat(Self.totalButtons - 1) * spacing
-            + separatorWidth
-        var x = (bounds.width - totalWidth) / 2
-        let y = (bounds.height - buttonSize) / 2
+        let size = Self.buttonSize
+        let step = size + Self.buttonSpacing
+        for (index, id) in items.enumerated() {
+            let along = Self.endPadding + CGFloat(index) * step
+            let frame: NSRect
+            switch orientation {
+            case .horizontal:
+                frame = NSRect(x: along, y: Self.crossPadding, width: size, height: size)
+            case .vertical:
+                // AppKit y grows upward, so the first item sits at the top.
+                let y = bounds.height - Self.endPadding - size - CGFloat(index) * step
+                frame = NSRect(x: Self.crossPadding, y: y, width: size, height: size)
+            }
+            let view = makeButton(for: id, index: index, frame: frame)
+            buttons[id] = view
+            addSubview(view)
+        }
+    }
 
-        // Tool buttons (toggleable annotation tools)
-        let tools: [(EditTool, String, String)] = [
-            (.rectangle, "rectangle", L10n.tipRectangle),
-            (.ellipse, "circle", L10n.tipEllipse),
-            (.arrow, "arrow.up.right", L10n.tipArrow),
-            (.pen, "pencil.tip", L10n.tipPen),
-            (.marker, "highlighter", L10n.tipMarker),
-            (.mosaic, "square.grid.3x3", L10n.tipMosaic),
-            (.numbered, "1.circle", L10n.tipNumbered),
-            (.text, "textformat", L10n.tipText),
-        ]
-
-        for (tool, symbol, tip) in tools {
-            let btn = ToolButton(
-                frame: NSRect(x: x, y: y, width: buttonSize, height: buttonSize),
-                symbolName: symbol,
-                normalColor: .white,
-                selectedColor: accentGreen
-            )
-            btn.hoverTip = tip
-            btn.target = self
-            btn.action = #selector(toolTapped(_:))
-            btn.tag = toolButtons.count
-            addSubview(btn)
-            toolButtons.append((tool, btn))
-            x += buttonSize + spacing
+    private func makeButton(for id: ToolbarItemID, index: Int, frame: NSRect) -> NSView {
+        // The move-selection handle is a press-drag gesture, not a tap target.
+        if id.kind == .dragHandle {
+            let handle = MoveSelectionDragHandle(frame: frame)
+            handle.hoverTip = id.tooltip
+            handle.onDragStart = { [weak self] in self?.onMoveSelectionStart?() }
+            handle.onDrag = { [weak self] delta in self?.onMoveSelectionDrag?(delta) }
+            handle.onDragEnd = { [weak self] in self?.onMoveSelectionEnd?() }
+            return handle
         }
 
-        // Color picker button (momentary — does not toggle a tool state)
-        let colorPickerBtn = ToolButton(
-            frame: NSRect(x: x, y: y, width: buttonSize, height: buttonSize),
-            symbolName: "eyedropper",
-            normalColor: .white,
-            selectedColor: .white
+        let btn = ToolButton(
+            frame: frame,
+            symbolName: id.symbolName,
+            normalColor: id.normalColor,
+            selectedColor: id.selectedColor
         )
-        colorPickerBtn.hoverTip = L10n.tipColorPicker
-        colorPickerBtn.target = self
-        colorPickerBtn.action = #selector(colorPickerTapped)
-        addSubview(colorPickerBtn)
-        x += buttonSize + spacing
-
-        // Undo button
-        let undoBtn = ToolButton(
-            frame: NSRect(x: x, y: y, width: buttonSize, height: buttonSize),
-            symbolName: "arrow.uturn.backward",
-            normalColor: .white,
-            selectedColor: .white
-        )
-        undoBtn.hoverTip = L10n.tipUndo
-        undoBtn.target = self
-        undoBtn.action = #selector(undoTapped)
-        addSubview(undoBtn)
-        x += buttonSize + spacing
-
-        // Redo button
-        let redoBtn = ToolButton(
-            frame: NSRect(x: x, y: y, width: buttonSize, height: buttonSize),
-            symbolName: "arrow.uturn.forward",
-            normalColor: .white,
-            selectedColor: .white
-        )
-        redoBtn.hoverTip = L10n.tipRedo
-        redoBtn.target = self
-        redoBtn.action = #selector(redoTapped)
-        addSubview(redoBtn)
-        x += buttonSize + spacing
-
-        // Move-selection drag handle. Press-and-drag this button to move
-        // the entire selection rect — replaces the old "click inside the
-        // rect to drag it" gesture so adjust-mode clicks reach annotations.
-        let moveBtn = MoveSelectionDragHandle(
-            frame: NSRect(x: x, y: y, width: buttonSize, height: buttonSize)
-        )
-        moveBtn.hoverTip = L10n.tipMoveSelection
-        moveBtn.onDragStart = { [weak self] in self?.onMoveSelectionStart?() }
-        moveBtn.onDrag = { [weak self] delta in self?.onMoveSelectionDrag?(delta) }
-        moveBtn.onDragEnd = { [weak self] in self?.onMoveSelectionEnd?() }
-        addSubview(moveBtn)
-        x += buttonSize + spacing
-
-        // Scroll capture button
-        let scrollBtn = ToolButton(
-            frame: NSRect(x: x, y: y, width: buttonSize, height: buttonSize),
-            symbolName: "arrow.up.and.down.text.horizontal",
-            normalColor: .white,
-            selectedColor: accentGreen
-        )
-        scrollBtn.hoverTip = L10n.tipScrollCapture
-        scrollBtn.target = self
-        scrollBtn.action = #selector(scrollCaptureTapped)
-        addSubview(scrollBtn)
-        scrollCaptureBtn = scrollBtn
-        x += buttonSize + spacing
-
-        // Beautify button
-        let beautifyBtn = ToolButton(
-            frame: NSRect(x: x, y: y, width: buttonSize, height: buttonSize),
-            symbolName: "sparkles",
-            normalColor: .white,
-            selectedColor: accentGreen
-        )
-        beautifyBtn.hoverTip = L10n.tipBeautify
-        beautifyBtn.target = self
-        beautifyBtn.action = #selector(beautifyTapped)
-        addSubview(beautifyBtn)
-        self.beautifyBtn = beautifyBtn
-        x += buttonSize + spacing
-
-        // OCR button — recognizes text in the selection and offers translation.
-        let ocrBtn = ToolButton(
-            frame: NSRect(x: x, y: y, width: buttonSize, height: buttonSize),
-            symbolName: "text.viewfinder",
-            normalColor: .white,
-            selectedColor: .white
-        )
-        ocrBtn.hoverTip = L10n.tipOCR
-        ocrBtn.target = self
-        ocrBtn.action = #selector(ocrTapped)
-        addSubview(ocrBtn)
-        x += buttonSize + spacing + separatorWidth
-
-        // Save button
-        let saveBtn = ToolButton(
-            frame: NSRect(x: x, y: y, width: buttonSize, height: buttonSize),
-            symbolName: "square.and.arrow.down",
-            normalColor: .white,
-            selectedColor: .white
-        )
-        saveBtn.hoverTip = L10n.tipSave
-        saveBtn.target = self
-        saveBtn.action = #selector(saveTapped)
-        addSubview(saveBtn)
-        x += buttonSize + spacing
-
-        // Upload button — disabled when no provider is configured.
-        let hasProvider = Defaults.hasUsableUploadProvider
-        let uploadBtn = ToolButton(
-            frame: NSRect(x: x, y: y, width: buttonSize, height: buttonSize),
-            symbolName: "icloud.and.arrow.up",
-            normalColor: .white,
-            selectedColor: .white
-        )
-        uploadBtn.hoverTip = L10n.tipUpload
-        uploadBtn.target = self
-        uploadBtn.action = #selector(uploadTapped)
-        uploadBtn.isEnabled = hasProvider
-        uploadBtn.alphaValue = hasProvider ? 1.0 : 0.35
-        addSubview(uploadBtn)
-        x += buttonSize + spacing
-
-        // Pin button
-        let pinBtn = ToolButton(
-            frame: NSRect(x: x, y: y, width: buttonSize, height: buttonSize),
-            symbolName: "pin",
-            normalColor: .white,
-            selectedColor: .white
-        )
-        pinBtn.hoverTip = L10n.tipPin
-        pinBtn.target = self
-        pinBtn.action = #selector(pinTapped)
-        addSubview(pinBtn)
-        x += buttonSize + spacing
-
-        // Cancel button (red)
-        let closeBtn = ToolButton(
-            frame: NSRect(x: x, y: y, width: buttonSize, height: buttonSize),
-            symbolName: "xmark",
-            normalColor: NSColor(red: 1.0, green: 0.35, blue: 0.35, alpha: 1.0),
-            selectedColor: NSColor(red: 1.0, green: 0.35, blue: 0.35, alpha: 1.0)
-        )
-        closeBtn.hoverTip = L10n.tipCancel
-        closeBtn.target = self
-        closeBtn.action = #selector(closeTapped)
-        addSubview(closeBtn)
-        x += buttonSize + spacing
-
-        // Confirm button (green)
-        let confirmBtn = ToolButton(
-            frame: NSRect(x: x, y: y, width: buttonSize, height: buttonSize),
-            symbolName: "checkmark",
-            normalColor: accentGreen,
-            selectedColor: accentGreen
-        )
-        confirmBtn.hoverTip = L10n.tipConfirm
-        confirmBtn.target = self
-        confirmBtn.action = #selector(confirmTapped)
-        addSubview(confirmBtn)
+        btn.hoverTip = id.tooltip
+        btn.target = self
+        btn.action = #selector(buttonTapped(_:))
+        btn.tag = index
+        // Upload is unavailable until an upload provider is configured.
+        if id == .upload {
+            let hasProvider = Defaults.hasUsableUploadProvider
+            btn.isEnabled = hasProvider
+            btn.alphaValue = hasProvider ? 1.0 : 0.35
+        }
+        return btn
     }
 
     override func draw(_ dirtyRect: NSRect) {
@@ -1446,46 +1343,28 @@ class ToolbarView: NSView {
         path.fill()
     }
 
-    @objc private func toolTapped(_ sender: ToolButton) {
-        let index = sender.tag
-        guard index < toolButtons.count else { return }
-        let (tool, _) = toolButtons[index]
-        // Click an already-selected tool to deselect it and enter adjust
-        // mode (no tool, but existing marks remain draggable).
-        if tool == currentTool {
-            onToolSelected?(.none)
-        } else {
-            onToolSelected?(tool)
+    @objc private func buttonTapped(_ sender: ToolButton) {
+        guard sender.tag >= 0, sender.tag < items.count else { return }
+        let id = items[sender.tag]
+        switch id {
+        case .rectangle, .ellipse, .arrow, .pen, .marker, .mosaic, .numbered, .text:
+            guard let tool = id.editTool else { return }
+            // Click an already-selected tool to deselect it and enter adjust
+            // mode (no tool, but existing marks remain draggable).
+            onToolSelected?(tool == currentTool ? .none : tool)
+        case .colorPicker:   onColorPicker?()
+        case .undo:          onUndo?()
+        case .redo:          onRedo?()
+        case .scrollCapture: onScrollCapture?()
+        case .beautify:      onBeautify?()
+        case .ocr:           onOCR?()
+        case .save:          onSave?()
+        case .upload:        onUpload?()
+        case .pin:           onPin?()
+        case .close:         onClose?()
+        case .confirm:       onConfirm?()
+        case .moveSelection: break  // handled by MoveSelectionDragHandle
         }
-    }
-
-    @objc private func undoTapped() { onUndo?() }
-    @objc private func redoTapped() { onRedo?() }
-    @objc private func colorPickerTapped() { onColorPicker?() }
-    @objc private func scrollCaptureTapped() { onScrollCapture?() }
-    @objc private func beautifyTapped() { onBeautify?() }
-    @objc private func ocrTapped() { onOCR?() }
-    @objc private func saveTapped() { onSave?() }
-    @objc private func uploadTapped() { onUpload?() }
-    @objc private func pinTapped() { onPin?() }
-    @objc private func closeTapped() { onClose?() }
-    @objc private func confirmTapped() { onConfirm?() }
-
-    func setScrollCaptureActive(_ active: Bool) {
-        scrollCaptureBtn?.isSelected = active
-    }
-
-    func setScrollCaptureEnabled(_ enabled: Bool) {
-        scrollCaptureBtn?.isEnabled = enabled
-        scrollCaptureBtn?.alphaValue = enabled ? 1.0 : 0.35
-    }
-
-    func setBeautifyActive(_ active: Bool) {
-        beautifyBtn?.isSelected = active
-    }
-
-    var scrollCaptureButtonFrame: NSRect? {
-        scrollCaptureBtn?.frame
     }
 }
 
