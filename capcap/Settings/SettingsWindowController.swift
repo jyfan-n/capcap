@@ -81,10 +81,13 @@ extension SettingsWindowController: NSWindowDelegate {
     func windowWillClose(_ notification: Notification) {
         settingsView.cancelShortcutRecording()
         guard isStartup else { return }
-        let accessibilityGranted = AXIsProcessTrusted()
-        let screenRecordingGranted = settingsView.checkScreenRecordingPermission()
-        if !accessibilityGranted || !screenRecordingGranted {
-            NSApp.terminate(nil)
-        }
+        // The startup dialog is a gate. Closing it without pressing Launch
+        // means the app was never initialized — no menu bar, no key monitor,
+        // no UI. Keeping the process alive would make it a zombie: the next
+        // icon click only sends a reopen event that nothing handles, so the
+        // app appears not to start. Quit instead, so re-clicking the icon
+        // performs a clean launch. (The Launch path clears isStartup first,
+        // so it never reaches here.)
+        NSApp.terminate(nil)
     }
 }
