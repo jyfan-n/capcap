@@ -134,6 +134,7 @@
 "aboutTagline" = "Инструмент для снимков экрана в строке меню";
 "aboutLicense" = "Лицензия";
 "aboutSourceCode" = "Исходный код";
+"aboutStarOnGitHub" = "Поставить звезду на GitHub 🌟";
 "aboutFeatureRequest" = "Запросить функцию";
 "aboutBugReport" = "Сообщить об ошибке";
 "aboutUpdateTitle" = "Обновления";

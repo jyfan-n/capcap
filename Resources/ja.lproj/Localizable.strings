@@ -134,6 +134,7 @@
 "aboutTagline" = "メニューバー スクリーンショットツール";
 "aboutLicense" = "ライセンス";
 "aboutSourceCode" = "ソースコード";
+"aboutStarOnGitHub" = "GitHub でスターを付ける 🌟";
 "aboutFeatureRequest" = "機能をリクエスト";
 "aboutBugReport" = "バグを報告";
 "aboutUpdateTitle" = "アップデート";

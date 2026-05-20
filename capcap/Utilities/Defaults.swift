@@ -202,6 +202,7 @@ enum L10n {
     static var aboutTagline: String { s("aboutTagline") }
     static var aboutLicense: String { s("aboutLicense") }
     static var aboutSourceCode: String { s("aboutSourceCode") }
+    static var aboutStarOnGitHub: String { s("aboutStarOnGitHub") }
     static var aboutFeatureRequest: String { s("aboutFeatureRequest") }
     static var aboutBugReport: String { s("aboutBugReport") }
     static var aboutUpdateTitle: String { s("aboutUpdateTitle") }

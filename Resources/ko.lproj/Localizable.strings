@@ -134,6 +134,7 @@
 "aboutTagline" = "메뉴 막대 스크린샷 도구";
 "aboutLicense" = "라이선스";
 "aboutSourceCode" = "소스 코드";
+"aboutStarOnGitHub" = "GitHub에서 별 누르기 🌟";
 "aboutFeatureRequest" = "기능 요청";
 "aboutBugReport" = "버그 신고";
 "aboutUpdateTitle" = "업데이트";

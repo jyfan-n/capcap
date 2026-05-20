@@ -126,6 +126,7 @@ class SettingsView: NSView {
     private var aboutTaglineLabel: NSTextField?
     private var aboutLicenseTitleLabel: NSTextField?
     private var aboutSourceTitleLabel: NSTextField?
+    private var aboutStarTitleLabel: NSTextField?
     private var aboutFeatureRequestTitleLabel: NSTextField?
     private var aboutBugReportTitleLabel: NSTextField?
     private var aboutUpdateTitleLabel: NSTextField?
@@ -871,6 +872,16 @@ class SettingsView: NSView {
         repo.row.widthAnchor.constraint(equalTo: infoInner.widthAnchor).isActive = true
         infoInner.addArrangedSubview(rowDivider())
 
+        let star = makeLinkRow(
+            title: L10n.aboutStarOnGitHub,
+            value: "",
+            action: #selector(openStarOnGitHub)
+        )
+        aboutStarTitleLabel = star.title
+        infoInner.addArrangedSubview(star.row)
+        star.row.widthAnchor.constraint(equalTo: infoInner.widthAnchor).isActive = true
+        infoInner.addArrangedSubview(rowDivider())
+
         let featureRequest = makeLinkRow(
             title: L10n.aboutFeatureRequest,
             value: "",
@@ -1211,6 +1222,12 @@ class SettingsView: NSView {
     }
 
     @objc private func openSourceRepo() {
+        if let url = URL(string: "https://github.com/realskyrin/capcap") {
+            NSWorkspace.shared.open(url)
+        }
+    }
+
+    @objc private func openStarOnGitHub() {
         if let url = URL(string: "https://github.com/realskyrin/capcap") {
             NSWorkspace.shared.open(url)
         }
@@ -2131,6 +2148,7 @@ class SettingsView: NSView {
         aboutTaglineLabel?.stringValue = L10n.aboutTagline
         aboutLicenseTitleLabel?.stringValue = L10n.aboutLicense
         aboutSourceTitleLabel?.stringValue = L10n.aboutSourceCode
+        aboutStarTitleLabel?.stringValue = L10n.aboutStarOnGitHub
         aboutFeatureRequestTitleLabel?.stringValue = L10n.aboutFeatureRequest
         aboutBugReportTitleLabel?.stringValue = L10n.aboutBugReport
         aboutUpdateTitleLabel?.stringValue = L10n.aboutUpdateTitle

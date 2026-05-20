@@ -134,6 +134,7 @@
 "aboutTagline" = "菜单栏截图工具";
 "aboutLicense" = "开源协议";
 "aboutSourceCode" = "源代码";
+"aboutStarOnGitHub" = "给 capcap 点个 Star 🌟";
 "aboutFeatureRequest" = "提需求";
 "aboutBugReport" = "提 Bug";
 "aboutUpdateTitle" = "软件更新";
