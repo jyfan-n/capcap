@@ -5,6 +5,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     private var keyMonitor: KeyMonitor!
     private var overlayController: OverlayWindowController?
     private var countdownActive = false
+    private var appInitialized = false
 
     func applicationShouldTerminateAfterLastWindowClosed(_ sender: NSApplication) -> Bool {
         return false
@@ -12,6 +13,15 @@ class AppDelegate: NSObject, NSApplicationDelegate {
 
     func applicationDidFinishLaunching(_ notification: Notification) {
         showStartupDialog()
+    }
+
+    func applicationShouldHandleReopen(_ sender: NSApplication, hasVisibleWindows flag: Bool) -> Bool {
+        if appInitialized {
+            openSettings()
+        } else {
+            SettingsWindowController.shared.showAsStartupDialog()
+        }
+        return false
     }
 
     private func showStartupDialog() {
@@ -29,6 +39,9 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     }
 
     private func initializeApp() {
+        guard !appInitialized else { return }
+        appInitialized = true
+
         ImageEditLauncher.clearTempDir()
 
         statusBarController = StatusBarController(
