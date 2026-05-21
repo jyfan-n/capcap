@@ -162,12 +162,14 @@
 "aboutBugReport" = "Signaler un bug";
 "aboutUpdateTitle" = "Mises à jour";
 "aboutErrorLog" = "Journal d'erreurs";
-"aboutErrorLogNoCrash" = "Aucun plantage";
-"aboutErrorLogLastCrash" = "Dernier plantage · %@";
+"aboutErrorLogNoCrash" = "Aucun journal d'erreur";
+"aboutErrorLogLastCrash" = "Dernier journal · %@";
 "aboutErrorLogCopy" = "Copier le journal";
 "aboutErrorLogCopied" = "Copié";
 "aboutErrorLogReveal" = "Afficher dans le Finder";
-"aboutErrorLogEmptyBody" = "capcap n'a enregistré aucun journal de plantage — tout fonctionne correctement. En cas de plantage, revenez ici pour copier le journal et le joindre à un rapport de bug.";
+"aboutErrorLogRefresh" = "Actualiser le journal";
+"aboutErrorLogClear" = "Effacer le journal";
+"aboutErrorLogEmptyBody" = "capcap n'a enregistré aucun journal d'erreur. Si l'app se fige ou plante, revenez ici pour copier le journal et le joindre à un rapport de bug.";
 
 /* Updates — About pane */
 "checkForUpdates" = "Rechercher des mises à jour";

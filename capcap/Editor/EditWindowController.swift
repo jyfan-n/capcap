@@ -579,7 +579,49 @@ class EditWindowController {
 
     // MARK: - Beautify
 
+    private func logBeautify(_ event: String, metadata: [String: Any] = [:]) {
+        var fields = beautifyStateMetadata()
+        for (key, value) in metadata {
+            fields[key] = value
+        }
+        DiagnosticLog.log("beautify.editor", event, metadata: fields)
+    }
+
+    private func beautifyStateMetadata() -> [String: Any] {
+        [
+            "isBeautifyActive": isBeautifyActive,
+            "isWindowCapture": isWindowCapture,
+            "activeTool": String(describing: activeTool),
+            "captureRect": diagnosticString(captureRect),
+            "selectionRect": diagnosticString(selectionRect),
+            "selectionViewRect": diagnosticString(selectionViewRect),
+            "screenFrame": diagnosticString(screen.frame),
+            "screenScale": screen.backingScaleFactor,
+            "screenName": screen.localizedName,
+            "currentPreset": currentBeautifyPreset?.id ?? "nil",
+            "currentPadding": String(format: "%.2f", currentBeautifyPadding),
+            "currentShadow": currentBeautifyShadowEnabled,
+            "hasPreview": canvasView?.hasPreviewImage == true,
+            "previewImage": diagnosticString(canvasView?.previewImage),
+            "externalBaseImage": diagnosticString(canvasView?.externalBaseImage),
+            "overrideBaseImage": diagnosticString(overrideBaseImage),
+            "windowBaseImage": diagnosticString(windowBaseImage),
+            "hasPreSnapshot": preSnapshot != nil,
+        ]
+    }
+
+    private func diagnosticString(_ rect: CGRect) -> String {
+        "x:\(String(format: "%.1f", rect.origin.x)),y:\(String(format: "%.1f", rect.origin.y)),w:\(String(format: "%.1f", rect.width)),h:\(String(format: "%.1f", rect.height))"
+    }
+
+    private func diagnosticString(_ image: NSImage?) -> String {
+        guard let image else { return "nil" }
+        let reps = image.representations.map { "\($0.pixelsWide)x\($0.pixelsHigh)" }.joined(separator: ",")
+        return "points=\(String(format: "%.1f", image.size.width))x\(String(format: "%.1f", image.size.height));reps=\(reps)"
+    }
+
     private func toggleBeautify() {
+        logBeautify("toggle.requested", metadata: ["willActivate": !isBeautifyActive])
         if isBeautifyActive {
             deactivateBeautify()
         } else {
@@ -588,8 +630,13 @@ class EditWindowController {
     }
 
     private func activateBeautify() {
-        guard let canvasView, let container = beautifyContainerView else { return }
+        logBeautify("activate.begin", metadata: DiagnosticLog.systemSnapshot())
+        guard let canvasView, let container = beautifyContainerView else {
+            logBeautify("activate.missingViews")
+            return
+        }
         let preset = BeautifyPreset.defaultPreset
+        logBeautify("activate.defaultPreset", metadata: ["preset": preset.id])
 
         // Beautify and annotation tools coexist — don't clear the active tool.
 
@@ -603,33 +650,58 @@ class EditWindowController {
         container.setInnerShadowInset(
             isWindowCapture ? BeautifyRenderer.windowInnerShadowInset : 0
         )
+        logBeautify("activate.shadowConfigured")
         if canvasView.previewImage == nil, canvasView.externalBaseImage == nil {
+            logBeautify("activate.externalBaseImage.begin")
             canvasView.externalBaseImage = windowShapedBaseImage(
                 from: canvasView.resolveBaseImageForEditing()
+            )
+            logBeautify(
+                "activate.externalBaseImage.end",
+                metadata: ["externalBaseImage": diagnosticString(canvasView.externalBaseImage)]
             )
         }
 
         currentBeautifyPreset = preset
         if preset.isWallpaper {
+            logBeautify("activate.wallpaper.begin")
             container.wallpaperImage = BeautifyRenderer.wallpaperImage(for: screen)
+            logBeautify(
+                "activate.wallpaper.end",
+                metadata: ["wallpaperImage": diagnosticString(container.wallpaperImage)]
+            )
         }
+        logBeautify("activate.containerSet.begin")
         container.setBeautify(preset: preset)
         container.setPadding(currentBeautifyPadding)
         container.setShadowEnabled(currentBeautifyShadowEnabled)
+        logBeautify(
+            "activate.containerSet.end",
+            metadata: ["containerFrame": diagnosticString(container.frame)]
+        )
         isBeautifyActive = true
         toolbars.forEach { $0.setBeautifyActive(true) }
+        logBeautify("activate.subToolbar.begin")
         showBeautifySubToolbar(selecting: preset)
+        logBeautify("activate.subToolbar.end")
         Defaults.lastBeautifyPresetID = preset.id
 
+        logBeautify("activate.updateFrame.begin")
         updateCanvasFrameForBeautify()
+        logBeautify("activate.updateFrame.end")
         repositionFloatingChrome()
         updateEditorInteractionState()
         canvasView.needsDisplay = true
         bringEditorToFront()
+        logBeautify("activate.end")
     }
 
     private func deactivateBeautify() {
-        guard let canvasView, let container = beautifyContainerView else { return }
+        logBeautify("deactivate.begin")
+        guard let canvasView, let container = beautifyContainerView else {
+            logBeautify("deactivate.missingViews")
+            return
+        }
         currentBeautifyPreset = nil
 
         canvasView.beautifyCornerRadius = nil
@@ -649,14 +721,24 @@ class EditWindowController {
         updateEditorInteractionState()
         canvasView.needsDisplay = true
         bringEditorToFront()
+        logBeautify("deactivate.end")
     }
 
     private func applyBeautifyPreset(_ preset: BeautifyPreset) {
-        guard let container = beautifyContainerView else { return }
+        logBeautify("preset.apply.begin", metadata: ["preset": preset.id])
+        guard let container = beautifyContainerView else {
+            logBeautify("preset.apply.missingContainer", metadata: ["preset": preset.id])
+            return
+        }
         currentBeautifyPreset = preset
 
         if preset.isWallpaper {
+            logBeautify("preset.wallpaper.begin")
             container.wallpaperImage = BeautifyRenderer.wallpaperImage(for: screen)
+            logBeautify(
+                "preset.wallpaper.end",
+                metadata: ["wallpaperImage": diagnosticString(container.wallpaperImage)]
+            )
         } else {
             container.wallpaperImage = nil
         }
@@ -667,9 +749,11 @@ class EditWindowController {
         canvasView?.needsDisplay = true
         updateCanvasFrameForBeautify()
         repositionFloatingChrome()
+        logBeautify("preset.apply.end", metadata: ["preset": preset.id])
     }
 
     private func applyBeautifyPadding(_ padding: CGFloat) {
+        logBeautify("padding.apply", metadata: ["padding": String(format: "%.2f", padding)])
         currentBeautifyPadding = padding
         Defaults.lastBeautifyPadding = Double(padding)
         beautifyContainerView?.setPadding(padding)
@@ -679,6 +763,7 @@ class EditWindowController {
     }
 
     private func applyBeautifyShadowEnabled(_ enabled: Bool) {
+        logBeautify("shadow.apply", metadata: ["enabled": enabled])
         currentBeautifyShadowEnabled = enabled
         Defaults.lastBeautifyShadowEnabled = enabled
         beautifyContainerView?.setShadowEnabled(enabled)
@@ -686,7 +771,11 @@ class EditWindowController {
     }
 
     private func showBeautifySubToolbar(selecting preset: BeautifyPreset) {
-        guard let hostSelectionView, let toolbarFrame = subToolbarAnchorFrame else { return }
+        logBeautify("subToolbar.show.begin", metadata: ["preset": preset.id])
+        guard let hostSelectionView, let toolbarFrame = subToolbarAnchorFrame else {
+            logBeautify("subToolbar.show.missingAnchor", metadata: ["preset": preset.id])
+            return
+        }
 
         beautifySubToolbarView?.removeFromSuperview()
 
@@ -719,15 +808,23 @@ class EditWindowController {
         styleFloatingHUD(view)
         hostSelectionView.addSubview(view)
         beautifySubToolbarView = view
+        logBeautify(
+            "subToolbar.show.end",
+            metadata: ["preset": preset.id, "frame": diagnosticString(view.frame)]
+        )
     }
 
     private func updateCanvasFrameForBeautify() {
+        logBeautify("frame.update.begin")
         guard
             let canvasView,
             let canvasScrollView,
             let hostSelectionView,
             let container = beautifyContainerView
-        else { return }
+        else {
+            logBeautify("frame.update.missingViews")
+            return
+        }
 
         if isBeautifyActive {
             canvasScrollView.frame = outerVisualRect(in: hostSelectionView.bounds)
@@ -741,6 +838,14 @@ class EditWindowController {
         canvasScrollView.reflectScrolledClipView(canvasScrollView.contentView)
         container.needsDisplay = true
         canvasView.needsDisplay = true
+        logBeautify(
+            "frame.update.end",
+            metadata: [
+                "scrollFrame": diagnosticString(canvasScrollView.frame),
+                "containerFrame": diagnosticString(container.frame),
+                "canvasFrame": diagnosticString(canvasView.frame),
+            ]
+        )
     }
 
     /// The on-screen rect of the canvas/scroll view. When beautify is on this

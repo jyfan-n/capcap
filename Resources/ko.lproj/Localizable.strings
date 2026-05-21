@@ -162,12 +162,14 @@
 "aboutBugReport" = "버그 신고";
 "aboutUpdateTitle" = "업데이트";
 "aboutErrorLog" = "오류 로그";
-"aboutErrorLogNoCrash" = "충돌 없음";
-"aboutErrorLogLastCrash" = "마지막 충돌 · %@";
+"aboutErrorLogNoCrash" = "오류 로그 없음";
+"aboutErrorLogLastCrash" = "최근 로그 · %@";
 "aboutErrorLogCopy" = "로그 복사";
 "aboutErrorLogCopied" = "복사됨";
 "aboutErrorLogReveal" = "Finder에 표시";
-"aboutErrorLogEmptyBody" = "capcap에 기록된 충돌 로그가 없습니다 — 모두 정상입니다. 충돌이 발생하면 여기로 돌아와 로그를 복사해 버그 신고에 사용하세요.";
+"aboutErrorLogRefresh" = "로그 새로고침";
+"aboutErrorLogClear" = "로그 지우기";
+"aboutErrorLogEmptyBody" = "capcap에 기록된 오류 로그가 아직 없습니다. 앱이 멈추거나 충돌하면 여기로 돌아와 로그를 복사해 버그 신고에 사용하세요.";
 
 /* Updates — About pane */
 "checkForUpdates" = "업데이트 확인";

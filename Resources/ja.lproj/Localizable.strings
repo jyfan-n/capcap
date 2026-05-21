@@ -162,12 +162,14 @@
 "aboutBugReport" = "バグを報告";
 "aboutUpdateTitle" = "アップデート";
 "aboutErrorLog" = "エラーログ";
-"aboutErrorLogNoCrash" = "クラッシュなし";
-"aboutErrorLogLastCrash" = "前回のクラッシュ · %@";
+"aboutErrorLogNoCrash" = "エラーログなし";
+"aboutErrorLogLastCrash" = "最新ログ · %@";
 "aboutErrorLogCopy" = "ログをコピー";
 "aboutErrorLogCopied" = "コピーしました";
 "aboutErrorLogReveal" = "Finder に表示";
-"aboutErrorLogEmptyBody" = "capcap はクラッシュログを記録していません — すべて正常に動作しています。クラッシュが発生した場合は、ここに戻ってログをコピーし、バグ報告にご利用ください。";
+"aboutErrorLogRefresh" = "ログを更新";
+"aboutErrorLogClear" = "ログを消去";
+"aboutErrorLogEmptyBody" = "capcap はまだエラーログを記録していません。フリーズやクラッシュが発生した場合は、ここに戻ってログをコピーし、バグ報告にご利用ください。";
 
 /* Updates — About pane */
 "checkForUpdates" = "アップデートを確認";

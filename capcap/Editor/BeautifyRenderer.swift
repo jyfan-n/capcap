@@ -77,21 +77,48 @@ enum BeautifyRenderer {
     /// default macOS dynamic wallpaper. We instead decode a single downscaled
     /// thumbnail once (ImageIO never expands the full-size image) and cache it.
     static func wallpaperImage(for screen: NSScreen) -> NSImage? {
-        guard let url = NSWorkspace.shared.desktopImageURL(for: screen) else { return nil }
+        DiagnosticLog.log(
+            "beautify.wallpaper",
+            "request.begin",
+            metadata: [
+                "screen": screen.localizedName,
+                "screenFrame": diagnosticString(screen.frame),
+                "screenScale": screen.backingScaleFactor,
+            ]
+        )
+        guard let url = NSWorkspace.shared.desktopImageURL(for: screen) else {
+            DiagnosticLog.log("beautify.wallpaper", "request.noDesktopImageURL")
+            return nil
+        }
         let key = url.path
 
         wallpaperCacheLock.lock()
         if let cached = wallpaperCache[key] {
             wallpaperCacheLock.unlock()
+            DiagnosticLog.log(
+                "beautify.wallpaper",
+                "cache.hit",
+                metadata: ["url": url.path, "image": diagnosticString(cached)]
+            )
             return cached
         }
         wallpaperCacheLock.unlock()
 
+        DiagnosticLog.log(
+            "beautify.wallpaper",
+            "cache.miss",
+            metadata: ["url": url.path, "fileSize": fileSizeString(url)]
+        )
         guard let image = downscaledWallpaper(url: url) else { return nil }
 
         wallpaperCacheLock.lock()
         wallpaperCache[key] = image
         wallpaperCacheLock.unlock()
+        DiagnosticLog.log(
+            "beautify.wallpaper",
+            "cache.store",
+            metadata: ["url": url.path, "image": diagnosticString(image)]
+        )
         return image
     }
 
@@ -100,10 +127,27 @@ enum BeautifyRenderer {
     /// performs the scaling inside ImageIO, so a 100 MB+ dynamic wallpaper is
     /// never fully decoded into memory.
     private static func downscaledWallpaper(url: URL) -> NSImage? {
+        DiagnosticLog.log(
+            "beautify.wallpaper",
+            "source.create.begin",
+            metadata: ["url": url.path, "fileSize": fileSizeString(url)]
+        )
         guard let source = CGImageSourceCreateWithURL(url as CFURL, nil) else {
+            DiagnosticLog.log("beautify.wallpaper", "source.create.failed", metadata: ["url": url.path])
             return NSImage(contentsOf: url)
         }
         let index = CGImageSourceGetPrimaryImageIndex(source)
+        let imageCount = CGImageSourceGetCount(source)
+        DiagnosticLog.log(
+            "beautify.wallpaper",
+            "thumbnail.create.begin",
+            metadata: [
+                "url": url.path,
+                "primaryIndex": index,
+                "imageCount": imageCount,
+                "maxPixelSize": wallpaperMaxEdge,
+            ]
+        )
         let options: [CFString: Any] = [
             kCGImageSourceCreateThumbnailFromImageAlways: true,
             kCGImageSourceCreateThumbnailWithTransform: true,
@@ -111,8 +155,14 @@ enum BeautifyRenderer {
             kCGImageSourceThumbnailMaxPixelSize: wallpaperMaxEdge,
         ]
         guard let cg = CGImageSourceCreateThumbnailAtIndex(source, index, options as CFDictionary) else {
+            DiagnosticLog.log("beautify.wallpaper", "thumbnail.create.failed", metadata: ["url": url.path])
             return NSImage(contentsOf: url)
         }
+        DiagnosticLog.log(
+            "beautify.wallpaper",
+            "thumbnail.create.end",
+            metadata: ["url": url.path, "pixels": "\(cg.width)x\(cg.height)"]
+        )
         return NSImage(cgImage: cg, size: NSSize(width: cg.width, height: cg.height))
     }
 
@@ -269,6 +319,19 @@ enum BeautifyRenderer {
     ) -> NSImage {
         let innerSize = innerImage.size
         guard innerSize.width > 0, innerSize.height > 0 else { return innerImage }
+        DiagnosticLog.log(
+            "beautify.render",
+            "begin",
+            metadata: [
+                "preset": preset.id,
+                "innerImage": diagnosticString(innerImage),
+                "padding": String(format: "%.2f", padding),
+                "shadowEnabled": shadowEnabled,
+                "innerClipRadius": innerClipRadius.map { String(format: "%.2f", $0) } ?? "nil",
+                "innerShadowCornerRadius": String(format: "%.2f", innerShadowCornerRadius),
+                "innerShadowInset": String(format: "%.2f", innerShadowInset),
+            ]
+        )
 
         let outer = outputSize(innerSize: innerSize, padding: padding)
         let outerRect = CGRect(origin: .zero, size: outer)
@@ -278,6 +341,15 @@ enum BeautifyRenderer {
         let innerPixelScale = pixelScale(of: innerImage)
         let pixelsWide = Int((outer.width * innerPixelScale).rounded())
         let pixelsHigh = Int((outer.height * innerPixelScale).rounded())
+        DiagnosticLog.log(
+            "beautify.render",
+            "bitmap.allocate.begin",
+            metadata: [
+                "outerSize": diagnosticString(CGRect(origin: .zero, size: outer)),
+                "pixelScale": String(format: "%.2f", innerPixelScale),
+                "pixels": "\(pixelsWide)x\(pixelsHigh)",
+            ]
+        )
 
         guard let rep = NSBitmapImageRep(
             bitmapDataPlanes: nil,
@@ -291,11 +363,16 @@ enum BeautifyRenderer {
             bytesPerRow: 0,
             bitsPerPixel: 32
         ) else {
+            DiagnosticLog.log("beautify.render", "bitmap.allocate.failed")
             return innerImage
         }
         rep.size = outer
 
-        guard let ctx = NSGraphicsContext(bitmapImageRep: rep) else { return innerImage }
+        guard let ctx = NSGraphicsContext(bitmapImageRep: rep) else {
+            DiagnosticLog.log("beautify.render", "graphicsContext.failed")
+            return innerImage
+        }
+        DiagnosticLog.log("beautify.render", "bitmap.allocate.end")
 
         NSGraphicsContext.saveGraphicsState()
         NSGraphicsContext.current = ctx
@@ -357,6 +434,26 @@ enum BeautifyRenderer {
 
         let image = NSImage(size: outer)
         image.addRepresentation(rep)
+        DiagnosticLog.log(
+            "beautify.render",
+            "end",
+            metadata: ["result": diagnosticString(image)]
+        )
         return image
+    }
+
+    private static func diagnosticString(_ rect: CGRect) -> String {
+        "x:\(String(format: "%.1f", rect.origin.x)),y:\(String(format: "%.1f", rect.origin.y)),w:\(String(format: "%.1f", rect.width)),h:\(String(format: "%.1f", rect.height))"
+    }
+
+    private static func diagnosticString(_ image: NSImage) -> String {
+        let reps = image.representations.map { "\($0.pixelsWide)x\($0.pixelsHigh)" }.joined(separator: ",")
+        return "points=\(String(format: "%.1f", image.size.width))x\(String(format: "%.1f", image.size.height));reps=\(reps)"
+    }
+
+    private static func fileSizeString(_ url: URL) -> String {
+        let values = try? url.resourceValues(forKeys: [.fileSizeKey])
+        guard let bytes = values?.fileSize else { return "unknown" }
+        return "\(bytes)"
     }
 }

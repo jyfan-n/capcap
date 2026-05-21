@@ -160,7 +160,7 @@ class SettingsView: NSView {
     private var aboutUpdateStatusLabel: NSTextField?
     private var aboutUpdateButton: NSButton?
 
-    // Error log card (About pane) — expandable crash log viewer.
+    // Error log card (About pane) — expandable diagnostic log viewer.
     private var errorLogTitleLabel: NSTextField?
     private var errorLogStatusLabel: NSTextField?
     private var errorLogChevron: NSImageView?
@@ -169,6 +169,8 @@ class SettingsView: NSView {
     private var errorLogTextView: NSTextView?
     private var errorLogCopyButton: NSButton?
     private var errorLogRevealButton: NSButton?
+    private var errorLogRefreshButton: NSButton?
+    private var errorLogClearButton: NSButton?
     private var errorLogEntry: CrashLogReader.Entry?
     private var errorLogExpanded = false
     private var errorLogLoaded = false
@@ -1007,7 +1009,7 @@ class SettingsView: NSView {
         infoCard.widthAnchor.constraint(equalTo: stack.widthAnchor).isActive = true
 
         // Error log card — collapsed by default, expands to show the most
-        // recent crash report so users can copy it into a bug report.
+        // recent diagnostic log so users can copy it into a bug report.
         let errorLogCard = buildErrorLogCard()
         stack.addArrangedSubview(errorLogCard)
         errorLogCard.widthAnchor.constraint(equalTo: stack.widthAnchor).isActive = true
@@ -1117,25 +1119,32 @@ class SettingsView: NSView {
         errorLogTextView = textView
 
         // Action buttons.
-        let copyButton = NSButton(title: L10n.aboutErrorLogCopy, target: self,
-                                  action: #selector(copyErrorLog))
-        copyButton.bezelStyle = .rounded
-        copyButton.controlSize = .small
-        copyButton.font = NSFont.systemFont(ofSize: 12)
-        copyButton.translatesAutoresizingMaskIntoConstraints = false
+        func makeLogButton(title: String, action: Selector) -> NSButton {
+            let button = NSButton(title: title, target: self, action: action)
+            button.bezelStyle = .rounded
+            button.controlSize = .small
+            button.font = NSFont.systemFont(ofSize: 12)
+            button.translatesAutoresizingMaskIntoConstraints = false
+            return button
+        }
+
+        let copyButton = makeLogButton(title: L10n.aboutErrorLogCopy, action: #selector(copyErrorLog))
         errorLogCopyButton = copyButton
 
-        let revealButton = NSButton(title: L10n.aboutErrorLogReveal, target: self,
-                                    action: #selector(revealErrorLog))
-        revealButton.bezelStyle = .rounded
-        revealButton.controlSize = .small
-        revealButton.font = NSFont.systemFont(ofSize: 12)
-        revealButton.translatesAutoresizingMaskIntoConstraints = false
+        let revealButton = makeLogButton(title: L10n.aboutErrorLogReveal, action: #selector(revealErrorLog))
         errorLogRevealButton = revealButton
+
+        let refreshButton = makeLogButton(title: L10n.aboutErrorLogRefresh, action: #selector(refreshErrorLog))
+        errorLogRefreshButton = refreshButton
+
+        let clearButton = makeLogButton(title: L10n.aboutErrorLogClear, action: #selector(clearErrorLog))
+        errorLogClearButton = clearButton
 
         content.addSubview(scroll)
         content.addSubview(copyButton)
         content.addSubview(revealButton)
+        content.addSubview(refreshButton)
+        content.addSubview(clearButton)
         NSLayoutConstraint.activate([
             divider.topAnchor.constraint(equalTo: content.topAnchor),
             divider.leadingAnchor.constraint(equalTo: content.leadingAnchor),
@@ -1152,6 +1161,12 @@ class SettingsView: NSView {
 
             revealButton.centerYAnchor.constraint(equalTo: copyButton.centerYAnchor),
             revealButton.leadingAnchor.constraint(equalTo: copyButton.trailingAnchor, constant: 8),
+
+            refreshButton.centerYAnchor.constraint(equalTo: copyButton.centerYAnchor),
+            refreshButton.leadingAnchor.constraint(equalTo: revealButton.trailingAnchor, constant: 8),
+
+            clearButton.centerYAnchor.constraint(equalTo: copyButton.centerYAnchor),
+            clearButton.leadingAnchor.constraint(equalTo: refreshButton.trailingAnchor, constant: 8),
         ])
 
         let inner = verticalInnerStack()
@@ -1200,40 +1215,57 @@ class SettingsView: NSView {
         }
     }
 
-    /// Reads the latest crash report into the text view on first expansion.
+    /// Reads the latest diagnostic log into the text view on first expansion.
     private func loadErrorLogIfNeeded() {
         guard !errorLogLoaded else { return }
-        errorLogLoaded = true
+        renderErrorLogContent()
+    }
 
+    /// Re-scans log files and refreshes the visible error-log content.
+    private func reloadErrorLogFromDisk() {
+        refreshErrorLogStatus()
+        renderErrorLogContent()
+    }
+
+    private func renderErrorLogContent() {
+        errorLogLoaded = true
         if let entry = errorLogEntry {
             errorLogTextView?.string = CrashLogReader.readableText(at: entry.url)
             errorLogTextView?.textColor = NSColor.white.withAlphaComponent(0.82)
             errorLogCopyButton?.isEnabled = true
             errorLogRevealButton?.isEnabled = true
+            errorLogClearButton?.isEnabled = true
         } else {
             errorLogTextView?.string = L10n.aboutErrorLogEmptyBody
             errorLogTextView?.textColor = NSColor.white.withAlphaComponent(0.55)
             errorLogCopyButton?.isEnabled = false
             errorLogRevealButton?.isEnabled = false
+            errorLogClearButton?.isEnabled = false
         }
     }
 
-    /// Syncs the header status label to whether a crash report exists.
+    /// Syncs the header status label to whether a diagnostic log exists.
     private func refreshErrorLogStatus() {
-        errorLogEntry = CrashLogReader.latestCrashFile()
+        errorLogEntry = CrashLogReader.latestLogFile()
         guard let label = errorLogStatusLabel else { return }
         if let entry = errorLogEntry {
             let formatter = DateFormatter()
             formatter.dateFormat = "yyyy-MM-dd HH:mm"
             label.stringValue = L10n.aboutErrorLogLastCrash(formatter.string(from: entry.date))
             label.textColor = NSColor(calibratedRed: 0.95, green: 0.55, blue: 0.45, alpha: 1.0)
+            errorLogCopyButton?.isEnabled = errorLogLoaded
+            errorLogRevealButton?.isEnabled = errorLogLoaded
+            errorLogClearButton?.isEnabled = true
         } else {
             label.stringValue = L10n.aboutErrorLogNoCrash
             label.textColor = NSColor.white.withAlphaComponent(0.55)
+            errorLogCopyButton?.isEnabled = false
+            errorLogRevealButton?.isEnabled = false
+            errorLogClearButton?.isEnabled = false
         }
     }
 
-    /// Copies the crash log to the clipboard, flashing the button as feedback.
+    /// Copies the diagnostic log to the clipboard, flashing the button as feedback.
     @objc private func copyErrorLog() {
         guard errorLogEntry != nil,
               let text = errorLogTextView?.string, !text.isEmpty else { return }
@@ -1250,10 +1282,28 @@ class SettingsView: NSView {
         }
     }
 
-    /// Reveals the crash report file in Finder.
+    /// Reveals the diagnostic log file in Finder.
     @objc private func revealErrorLog() {
         guard let url = errorLogEntry?.url else { return }
         NSWorkspace.shared.activateFileViewerSelecting([url])
+    }
+
+    /// Manually reloads logs from disk.
+    @objc private func refreshErrorLog() {
+        reloadErrorLogFromDisk()
+    }
+
+    /// Deletes all capcap diagnostic logs and resets the visible error-log UI.
+    @objc private func clearErrorLog() {
+        CrashLogReader.deleteAllLogs()
+        errorLogEntry = nil
+        errorLogLoaded = true
+        errorLogTextView?.string = L10n.aboutErrorLogEmptyBody
+        errorLogTextView?.textColor = NSColor.white.withAlphaComponent(0.55)
+        errorLogCopyButton?.isEnabled = false
+        errorLogRevealButton?.isEnabled = false
+        errorLogClearButton?.isEnabled = false
+        refreshErrorLogStatus()
     }
 
     /// Static left-title / right-value row, mirroring the permission row chrome.
@@ -2632,6 +2682,8 @@ class SettingsView: NSView {
         errorLogTitleLabel?.stringValue = L10n.aboutErrorLog
         errorLogCopyButton?.title = L10n.aboutErrorLogCopy
         errorLogRevealButton?.title = L10n.aboutErrorLogReveal
+        errorLogRefreshButton?.title = L10n.aboutErrorLogRefresh
+        errorLogClearButton?.title = L10n.aboutErrorLogClear
         if errorLogLoaded, errorLogEntry == nil {
             errorLogTextView?.string = L10n.aboutErrorLogEmptyBody
         }

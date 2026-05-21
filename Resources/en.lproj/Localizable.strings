@@ -162,12 +162,14 @@
 "aboutBugReport" = "Report a bug";
 "aboutUpdateTitle" = "Updates";
 "aboutErrorLog" = "Error Log";
-"aboutErrorLogNoCrash" = "No crashes";
-"aboutErrorLogLastCrash" = "Last crash · %@";
+"aboutErrorLogNoCrash" = "No error logs";
+"aboutErrorLogLastCrash" = "Latest log · %@";
 "aboutErrorLogCopy" = "Copy Log";
 "aboutErrorLogCopied" = "Copied";
 "aboutErrorLogReveal" = "Show in Finder";
-"aboutErrorLogEmptyBody" = "capcap hasn't recorded any crash logs — everything looks healthy. If it crashes, come back here to copy the log for a bug report.";
+"aboutErrorLogRefresh" = "Refresh Log";
+"aboutErrorLogClear" = "Clear Log";
+"aboutErrorLogEmptyBody" = "capcap hasn't recorded any error logs yet. If the app freezes or crashes, come back here to copy the log for a bug report.";
 
 /* Updates — About pane */
 "checkForUpdates" = "Check for Updates";

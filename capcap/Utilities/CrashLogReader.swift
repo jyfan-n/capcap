@@ -1,9 +1,9 @@
 import Foundation
 
-/// Locates and reads the most recent macOS crash report for capcap so the
-/// user can copy it into a bug report.
+/// Locates and reads the most recent capcap diagnostic log. This includes the
+/// app's own persisted error log plus macOS crash reports.
 enum CrashLogReader {
-    /// A crash report file on disk — its URL plus when it was written.
+    /// A log file on disk — its URL plus when it was written.
     struct Entry {
         let url: URL
         let date: Date
@@ -13,30 +13,39 @@ enum CrashLogReader {
     /// name matches capcap's CFBundleExecutable.
     private static let processName = "capcap"
 
+    /// Returns the newest app diagnostic log or macOS crash report belonging
+    /// to capcap, or nil if no log exists. This only stats the files — it does
+    /// not read any file contents.
+    static func latestLogFile() -> Entry? {
+        let diagnostic = DiagnosticLog.latestFile().map {
+            Entry(url: $0.url, date: $0.date)
+        }
+        let crash = latestCrashFile()
+        switch (diagnostic, crash) {
+        case let (d?, c?):
+            return d.date >= c.date ? d : c
+        case let (d?, nil):
+            return d
+        case let (nil, c?):
+            return c
+        case (nil, nil):
+            return nil
+        }
+    }
+
     /// Scans the standard DiagnosticReports directories and returns the newest
     /// crash report belonging to capcap, or nil if the app has never crashed.
     /// This only stats the directory — it does not read any file contents.
-    static func latestCrashFile() -> Entry? {
-        let fm = FileManager.default
-        guard let library = fm.urls(for: .libraryDirectory, in: .userDomainMask).first else {
-            return nil
-        }
-        let dirs = [
-            library.appendingPathComponent("Logs/DiagnosticReports", isDirectory: true),
-            library.appendingPathComponent("Logs/DiagnosticReports/Retired", isDirectory: true),
-        ]
-
+    private static func latestCrashFile() -> Entry? {
         var newest: Entry?
-        for dir in dirs {
+        for dir in diagnosticReportDirs() {
             guard let entries = try? fm.contentsOfDirectory(
                 at: dir,
                 includingPropertiesForKeys: [.contentModificationDateKey],
                 options: [.skipsHiddenFiles]
             ) else { continue }
             for url in entries {
-                let ext = url.pathExtension.lowercased()
-                guard ext == "ips" || ext == "crash" else { continue }
-                guard url.lastPathComponent.hasPrefix(processName + "-") else { continue }
+                guard isCapcapCrashReport(url) else { continue }
                 let date = (try? url.resourceValues(forKeys: [.contentModificationDateKey]))?
                     .contentModificationDate ?? .distantPast
                 if newest == nil || date > newest!.date {
@@ -47,9 +56,27 @@ enum CrashLogReader {
         return newest
     }
 
-    /// Reads a crash report and returns a human-readable rendering. Modern
-    /// `.ips` reports are a one-line JSON header followed by a JSON body; both
-    /// are pretty-printed when possible, falling back to the raw text.
+    /// Deletes capcap's persisted diagnostic log and any capcap-owned macOS
+    /// crash reports from the user's DiagnosticReports folders.
+    static func deleteAllLogs() {
+        DiagnosticLog.deleteFile()
+
+        for dir in diagnosticReportDirs() {
+            guard let entries = try? fm.contentsOfDirectory(
+                at: dir,
+                includingPropertiesForKeys: nil,
+                options: [.skipsHiddenFiles]
+            ) else { continue }
+
+            for url in entries where isCapcapCrashReport(url) {
+                try? fm.removeItem(at: url)
+            }
+        }
+    }
+
+    /// Reads a log file and returns a human-readable rendering. Modern `.ips`
+    /// reports are a one-line JSON header followed by a JSON body; both are
+    /// pretty-printed when possible, falling back to the raw text.
     static func readableText(at url: URL) -> String {
         let raw: String
         if let utf8 = try? String(contentsOf: url, encoding: .utf8) {
@@ -83,5 +110,23 @@ enum CrashLogReader {
             return nil
         }
         return String(decoding: pretty, as: UTF8.self)
+    }
+
+    private static let fm = FileManager.default
+
+    private static func diagnosticReportDirs() -> [URL] {
+        guard let library = fm.urls(for: .libraryDirectory, in: .userDomainMask).first else {
+            return []
+        }
+        return [
+            library.appendingPathComponent("Logs/DiagnosticReports", isDirectory: true),
+            library.appendingPathComponent("Logs/DiagnosticReports/Retired", isDirectory: true),
+        ]
+    }
+
+    private static func isCapcapCrashReport(_ url: URL) -> Bool {
+        let ext = url.pathExtension.lowercased()
+        guard ext == "ips" || ext == "crash" else { return false }
+        return url.lastPathComponent.hasPrefix(processName + "-")
     }
 }

@@ -162,12 +162,14 @@
 "aboutBugReport" = "提 Bug";
 "aboutUpdateTitle" = "软件更新";
 "aboutErrorLog" = "错误日志";
-"aboutErrorLogNoCrash" = "无崩溃记录";
-"aboutErrorLogLastCrash" = "上次崩溃 · %@";
+"aboutErrorLogNoCrash" = "暂无错误日志";
+"aboutErrorLogLastCrash" = "最近日志 · %@";
 "aboutErrorLogCopy" = "复制日志";
 "aboutErrorLogCopied" = "已复制";
 "aboutErrorLogReveal" = "在访达中显示";
-"aboutErrorLogEmptyBody" = "capcap 暂未记录到崩溃日志，运行一切正常。如果遇到闪退，请回到这里复制日志反馈给开发者。";
+"aboutErrorLogRefresh" = "刷新日志";
+"aboutErrorLogClear" = "清除日志";
+"aboutErrorLogEmptyBody" = "capcap 暂未记录到错误日志。如果遇到卡死、强制退出或闪退，请回到这里复制日志反馈给开发者。";
 
 /* Updates — About pane */
 "checkForUpdates" = "检查更新";

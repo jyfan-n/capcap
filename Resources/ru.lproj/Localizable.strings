@@ -162,12 +162,14 @@
 "aboutBugReport" = "Сообщить об ошибке";
 "aboutUpdateTitle" = "Обновления";
 "aboutErrorLog" = "Журнал ошибок";
-"aboutErrorLogNoCrash" = "Сбоев нет";
-"aboutErrorLogLastCrash" = "Последний сбой · %@";
+"aboutErrorLogNoCrash" = "Журналов ошибок нет";
+"aboutErrorLogLastCrash" = "Последний журнал · %@";
 "aboutErrorLogCopy" = "Скопировать журнал";
 "aboutErrorLogCopied" = "Скопировано";
 "aboutErrorLogReveal" = "Показать в Finder";
-"aboutErrorLogEmptyBody" = "capcap не зафиксировал журналов сбоев — всё работает исправно. Если произойдёт сбой, вернитесь сюда, чтобы скопировать журнал для отчёта об ошибке.";
+"aboutErrorLogRefresh" = "Обновить журнал";
+"aboutErrorLogClear" = "Очистить журнал";
+"aboutErrorLogEmptyBody" = "capcap пока не зафиксировал журналов ошибок. Если приложение зависнет или завершится аварийно, вернитесь сюда, чтобы скопировать журнал для отчёта об ошибке.";
 
 /* Updates — About pane */
 "checkForUpdates" = "Проверить обновления";

@@ -31,6 +31,7 @@ final class BeautifyContainerView: NSView {
     /// value and the controller is responsible for forwarding the same value
     /// to `BeautifyRenderer.render(innerImage:preset:padding:)` at save time.
     private(set) var customPadding: CGFloat?
+    private var drawLogCount = 0
 
     var isBeautifyEnabled: Bool { beautifyPreset != nil }
 
@@ -61,28 +62,50 @@ final class BeautifyContainerView: NSView {
     // MARK: - Beautify API
 
     func setBeautify(preset: BeautifyPreset?) {
+        DiagnosticLog.log(
+            "beautify.container",
+            "setBeautify",
+            metadata: ["preset": preset?.id ?? "nil", "frame": diagnosticString(frame)]
+        )
+        drawLogCount = 0
         beautifyPreset = preset
         relayout()
         needsDisplay = true
     }
 
     func setPadding(_ padding: CGFloat?) {
+        DiagnosticLog.log(
+            "beautify.container",
+            "setPadding",
+            metadata: ["padding": padding.map { String(format: "%.2f", $0) } ?? "nil"]
+        )
         customPadding = padding
         relayout()
         needsDisplay = true
     }
 
     func setShadowEnabled(_ enabled: Bool) {
+        DiagnosticLog.log("beautify.container", "setShadowEnabled", metadata: ["enabled": enabled])
         shadowEnabled = enabled
         needsDisplay = true
     }
 
     func setInnerShadowCornerRadius(_ radius: CGFloat) {
+        DiagnosticLog.log(
+            "beautify.container",
+            "setInnerShadowCornerRadius",
+            metadata: ["radius": String(format: "%.2f", radius)]
+        )
         innerShadowCornerRadius = radius
         needsDisplay = true
     }
 
     func setInnerShadowInset(_ inset: CGFloat) {
+        DiagnosticLog.log(
+            "beautify.container",
+            "setInnerShadowInset",
+            metadata: ["inset": String(format: "%.2f", inset)]
+        )
         innerShadowInset = inset
         needsDisplay = true
     }
@@ -90,6 +113,7 @@ final class BeautifyContainerView: NSView {
     /// Called by the controller when the canvas's intrinsic size changes
     /// (selection resize or long-screenshot preview load).
     func canvasSizeDidChange() {
+        DiagnosticLog.log("beautify.container", "canvasSizeDidChange")
         relayout()
         needsDisplay = true
     }
@@ -97,6 +121,15 @@ final class BeautifyContainerView: NSView {
     private func relayout() {
         guard let canvasView else { return }
         let inner = canvasView.frame.size
+        DiagnosticLog.log(
+            "beautify.container",
+            "relayout.begin",
+            metadata: [
+                "preset": beautifyPreset?.id ?? "nil",
+                "inner": diagnosticString(inner),
+                "customPadding": customPadding.map { String(format: "%.2f", $0) } ?? "nil",
+            ]
+        )
         if beautifyPreset != nil, inner.width > 0, inner.height > 0 {
             let p = customPadding ?? BeautifyRenderer.padding(for: inner)
             let newSize = CGSize(
@@ -109,11 +142,35 @@ final class BeautifyContainerView: NSView {
             setFrameSize(inner)
             canvasView.setFrameOrigin(.zero)
         }
+        DiagnosticLog.log(
+            "beautify.container",
+            "relayout.end",
+            metadata: ["frame": diagnosticString(frame), "canvasFrame": diagnosticString(canvasView.frame)]
+        )
     }
 
     // MARK: - Drawing
 
     override func draw(_ dirtyRect: NSRect) {
+        let shouldLogDraw = drawLogCount < 3
+        if shouldLogDraw {
+            drawLogCount += 1
+            DiagnosticLog.log(
+                "beautify.container",
+                "draw.begin",
+                metadata: [
+                    "dirtyRect": diagnosticString(dirtyRect),
+                    "bounds": diagnosticString(bounds),
+                    "preset": beautifyPreset?.id ?? "nil",
+                    "shadowEnabled": shadowEnabled,
+                ]
+            )
+        }
+        defer {
+            if shouldLogDraw {
+                DiagnosticLog.log("beautify.container", "draw.end")
+            }
+        }
         guard
             let preset = beautifyPreset,
             let canvasView,
@@ -142,5 +199,13 @@ final class BeautifyContainerView: NSView {
                 context: context
             )
         }
+    }
+
+    private func diagnosticString(_ rect: CGRect) -> String {
+        "x:\(String(format: "%.1f", rect.origin.x)),y:\(String(format: "%.1f", rect.origin.y)),w:\(String(format: "%.1f", rect.width)),h:\(String(format: "%.1f", rect.height))"
+    }
+
+    private func diagnosticString(_ size: CGSize) -> String {
+        "w:\(String(format: "%.1f", size.width)),h:\(String(format: "%.1f", size.height))"
     }
 }

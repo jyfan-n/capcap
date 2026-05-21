@@ -241,6 +241,8 @@ enum L10n {
     static var aboutErrorLogCopy: String { s("aboutErrorLogCopy") }
     static var aboutErrorLogCopied: String { s("aboutErrorLogCopied") }
     static var aboutErrorLogReveal: String { s("aboutErrorLogReveal") }
+    static var aboutErrorLogRefresh: String { s("aboutErrorLogRefresh") }
+    static var aboutErrorLogClear: String { s("aboutErrorLogClear") }
     static var aboutErrorLogEmptyBody: String { s("aboutErrorLogEmptyBody") }
 
     // Updates — About pane
