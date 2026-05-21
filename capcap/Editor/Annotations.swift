@@ -287,6 +287,140 @@ struct MosaicAnnotation: Annotation {
     }
 }
 
+// MARK: - Magnifier Annotation
+
+/// A circular magnifying-glass lens placed over the screenshot. The lens
+/// samples the base image directly beneath itself and redraws that region
+/// enlarged `zoom`× inside a glossy ring. It holds a reference to the source
+/// image and re-samples it on every draw, so moving or resizing the lens
+/// always shows whatever is currently underneath it (like a real loupe laid
+/// on a photo).
+struct MagnifierAnnotation: Annotation {
+    let center: NSPoint
+    let radius: CGFloat
+    /// Magnification factor — the lens shows a `2·radius / zoom` wide region
+    /// blown up to fill the `2·radius` circle.
+    let zoom: CGFloat
+    /// Base screenshot this lens magnifies. Sampled fresh on every draw.
+    let sourceImage: NSImage
+
+    static let defaultZoom: CGFloat = 2.0
+    /// Smallest radius the lens may be created or resized to.
+    static let minRadius: CGFloat = 16
+
+    var boundingRect: NSRect {
+        NSRect(
+            x: center.x - radius,
+            y: center.y - radius,
+            width: radius * 2,
+            height: radius * 2
+        )
+    }
+
+    // Cached chrome — the drop shadow, inner shadow and ring gradient are the
+    // same for every lens, so build them once.
+    private static let outerShadow: NSShadow = {
+        let s = NSShadow()
+        s.shadowColor = NSColor.black.withAlphaComponent(0.4)
+        s.shadowOffset = NSSize(width: 0, height: -6)
+        s.shadowBlurRadius = 14
+        return s
+    }()
+    private static let innerShadow: NSShadow = {
+        let s = NSShadow()
+        s.shadowColor = NSColor.black.withAlphaComponent(0.5)
+        s.shadowOffset = NSSize(width: 0, height: -3)
+        s.shadowBlurRadius = 6
+        return s
+    }()
+    private static let ringGradient: CGGradient? = {
+        let colors = [
+            NSColor.white.withAlphaComponent(0.95).cgColor,
+            NSColor(white: 0.7, alpha: 0.85).cgColor,
+        ] as CFArray
+        guard let space = CGColorSpace(name: CGColorSpace.sRGB) else { return nil }
+        return CGGradient(colorsSpace: space, colors: colors, locations: [0.0, 1.0])
+    }()
+
+    func draw(in context: CGContext, bounds: NSRect) {
+        guard radius > 6, let nsContext = NSGraphicsContext.current else { return }
+
+        let squareRect = boundingRect
+        let circle = NSBezierPath(ovalIn: squareRect)
+
+        // 1. Outer drop shadow — a white disc carries the shadow; passes 2-4
+        // paint over the disc, leaving only the shadow that spills outside.
+        NSGraphicsContext.saveGraphicsState()
+        Self.outerShadow.set()
+        NSColor.white.setFill()
+        circle.fill()
+        NSGraphicsContext.restoreGraphicsState()
+
+        // 2. Magnified content, clipped to the circle. The source region is
+        // `2·radius / zoom` wide in canvas coords, centered on the lens; map
+        // it into the source image's coordinate space and blow it up to fill.
+        NSGraphicsContext.saveGraphicsState()
+        circle.addClip()
+        let imgSize = sourceImage.size
+        let scaleX = bounds.width > 0 ? imgSize.width / bounds.width : 1
+        let scaleY = bounds.height > 0 ? imgSize.height / bounds.height : 1
+        let srcSize = (radius * 2) / max(zoom, 1)
+        let fromRect = NSRect(
+            x: (center.x - srcSize / 2) * scaleX,
+            y: (center.y - srcSize / 2) * scaleY,
+            width: srcSize * scaleX,
+            height: srcSize * scaleY
+        )
+        nsContext.imageInterpolation = .high
+        sourceImage.draw(in: squareRect, from: fromRect, operation: .sourceOver, fraction: 1.0)
+        NSGraphicsContext.restoreGraphicsState()
+
+        // 3. Glossy gradient ring border — a donut path (outer circle minus
+        // an inset inner circle) filled with a top-to-bottom gradient.
+        let borderWidth = max(3.5, radius * 0.07)
+        let innerCircle = NSBezierPath(ovalIn: squareRect.insetBy(dx: borderWidth, dy: borderWidth))
+        let ring = NSBezierPath()
+        ring.append(circle)
+        ring.append(innerCircle.reversed)
+        context.saveGState()
+        ring.addClip()
+        if let gradient = Self.ringGradient {
+            context.drawLinearGradient(
+                gradient,
+                start: CGPoint(x: squareRect.midX, y: squareRect.maxY),
+                end: CGPoint(x: squareRect.midX, y: squareRect.minY),
+                options: []
+            )
+        }
+        context.restoreGState()
+
+        // 4. Inner shadow — darkens the rim inside the glass for depth. A
+        // hollow rectangle with a circular hole, filled under a shadow while
+        // clipped to the circle, casts the shadow inward from the edge.
+        NSGraphicsContext.saveGraphicsState()
+        Self.innerShadow.set()
+        let innerHole = NSBezierPath(rect: squareRect.insetBy(dx: -30, dy: -30))
+        innerHole.append(NSBezierPath(ovalIn: squareRect).reversed)
+        circle.addClip()
+        NSColor.black.withAlphaComponent(0.8).setFill()
+        innerHole.fill()
+        NSGraphicsContext.restoreGraphicsState()
+    }
+
+    func containsPoint(_ point: NSPoint) -> Bool {
+        hypot(point.x - center.x, point.y - center.y) <= radius
+    }
+
+    func translated(by delta: NSPoint) -> Annotation {
+        MagnifierAnnotation(
+            center: NSPoint(x: center.x + delta.x, y: center.y + delta.y),
+            radius: radius,
+            zoom: zoom,
+            sourceImage: sourceImage
+        )
+    }
+}
+
 // MARK: - Rectangle Annotation
 
 struct RectAnnotation: Annotation {

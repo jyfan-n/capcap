@@ -12,6 +12,7 @@ enum ToolbarItemID: String, Codable, CaseIterable {
     case pen
     case marker
     case mosaic
+    case magnifier
     case numbered
     case text
     // Stateful actions
@@ -46,7 +47,7 @@ extension ToolbarItemID {
 
     var kind: Kind {
         switch self {
-        case .rectangle, .ellipse, .arrow, .line, .pen, .marker, .mosaic, .numbered, .text:
+        case .rectangle, .ellipse, .arrow, .line, .pen, .marker, .mosaic, .magnifier, .numbered, .text:
             return .toggleTool
         case .scrollCapture, .beautify:
             return .toggleAction
@@ -67,6 +68,7 @@ extension ToolbarItemID {
         case .pen:       return .pen
         case .marker:    return .marker
         case .mosaic:    return .mosaic
+        case .magnifier: return .magnifier
         case .numbered:  return .numbered
         case .text:      return .text
         default:         return nil
@@ -82,6 +84,7 @@ extension ToolbarItemID {
         case .pen:           return "pencil.tip"
         case .marker:        return "highlighter"
         case .mosaic:        return "square.grid.3x3"
+        case .magnifier:     return "plus.magnifyingglass"
         case .numbered:      return "1.circle"
         case .text:          return "textformat"
         case .colorPicker:   return "eyedropper"
@@ -109,6 +112,7 @@ extension ToolbarItemID {
         case .pen:           return L10n.tipPen
         case .marker:        return L10n.tipMarker
         case .mosaic:        return L10n.tipMosaic
+        case .magnifier:     return L10n.tipMagnifier
         case .numbered:      return L10n.tipNumbered
         case .text:          return L10n.tipText
         case .colorPicker:   return L10n.tipColorPicker
@@ -163,7 +167,7 @@ struct ToolbarLayout: Equatable {
     /// recorded.
     static let canonicalOrder: [ToolbarItemID] = [
         .rectangle, .ellipse, .line, .arrow, .pen, .marker, .mosaic, .numbered, .text,
-        .colorPicker, .undo, .redo, .moveSelection, .scrollCapture, .beautify, .ocr,
+        .colorPicker, .magnifier, .undo, .redo, .moveSelection, .scrollCapture, .beautify, .ocr,
         .save, .upload, .pin, .close, .confirm,
     ]
 
@@ -174,7 +178,7 @@ struct ToolbarLayout: Equatable {
         ToolbarLayout(
             primary: [
                 .rectangle, .ellipse, .line, .arrow, .pen, .marker, .mosaic, .numbered, .text,
-                .colorPicker, .beautify, .ocr, .undo, .redo, .moveSelection,
+                .colorPicker, .magnifier, .beautify, .ocr, .undo, .redo, .moveSelection,
             ],
             side: [.scrollCapture, .upload, .save, .pin, .close, .confirm],
             hidden: []

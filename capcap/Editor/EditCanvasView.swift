@@ -5,6 +5,7 @@ enum EditTool {
     case pen
     case marker
     case mosaic
+    case magnifier
     case rectangle
     case ellipse
     case arrow
@@ -80,6 +81,10 @@ class EditCanvasView: NSView {
     private var currentMarkerPoints: [NSPoint]?
     private var shapeStart: NSPoint?
     private var shapeCurrent: NSPoint?
+    /// Base image snapshot captured when a magnifier drag begins, reused for
+    /// both the live preview and the committed lens so the (possibly
+    /// expensive) base-image lookup happens only once per drag.
+    private var magnifierBaseImage: NSImage?
     private var numberCounter: Int = 1
     private var activeTextField: EditableTextField?
     /// When editing an existing text annotation, we remove it from the
@@ -530,6 +535,13 @@ class EditCanvasView: NSView {
             shapeStart = point
             shapeCurrent = point
 
+        case .magnifier:
+            shapeStart = point
+            shapeCurrent = point
+            // Resolve the base image once; both the live preview and the
+            // committed lens sample it.
+            magnifierBaseImage = resolveBaseImageForEditing()
+
         case .numbered:
             pendingNumberCreate = PendingNumberCreate(start: point, current: point)
 
@@ -600,7 +612,7 @@ class EditCanvasView: NSView {
             appendStrokePoint(point, to: &currentMarkerPoints)
             needsDisplay = true
 
-        case .rectangle, .ellipse, .arrow, .line, .mosaic:
+        case .rectangle, .ellipse, .arrow, .line, .mosaic, .magnifier:
             shapeCurrent = point
             needsDisplay = true
         }
@@ -718,6 +730,27 @@ class EditCanvasView: NSView {
             }
             shapeStart = nil
             shapeCurrent = nil
+
+        case .magnifier:
+            if let start = shapeStart, let end = shapeCurrent,
+               let baseImage = magnifierBaseImage {
+                // The press point is the lens center; the drag distance is
+                // its radius, so the lens grows outward from where the user
+                // pressed.
+                let radius = hypot(end.x - start.x, end.y - start.y)
+                if radius >= MagnifierAnnotation.minRadius {
+                    recordUndo()
+                    annotations.append(MagnifierAnnotation(
+                        center: start,
+                        radius: radius,
+                        zoom: MagnifierAnnotation.defaultZoom,
+                        sourceImage: baseImage
+                    ))
+                }
+            }
+            shapeStart = nil
+            shapeCurrent = nil
+            magnifierBaseImage = nil
 
         case .rectangle:
             if let start = shapeStart, let end = shapeCurrent {
@@ -894,6 +927,19 @@ class EditCanvasView: NSView {
                     context.closePath()
                     context.fillPath()
                 }
+            case .magnifier:
+                // Live lens preview — centered on the press point, radius
+                // following the drag, sampling the base image cached when
+                // the drag began.
+                let radius = hypot(current.x - start.x, current.y - start.y)
+                if radius > 6, let baseImage = magnifierBaseImage {
+                    MagnifierAnnotation(
+                        center: start,
+                        radius: radius,
+                        zoom: MagnifierAnnotation.defaultZoom,
+                        sourceImage: baseImage
+                    ).draw(in: context, bounds: bounds)
+                }
             default:
                 break
             }
@@ -1034,6 +1080,7 @@ class EditCanvasView: NSView {
         currentMarkerPoints = nil
         shapeStart = nil
         shapeCurrent = nil
+        magnifierBaseImage = nil
         dragState = nil
         handleDragState = nil
         pendingNumberCreate = nil
@@ -1616,7 +1663,7 @@ class EditCanvasView: NSView {
 
     /// True for annotations that expose the eight-grip resize chrome.
     private func isResizable(_ annotation: Annotation) -> Bool {
-        annotation is MosaicAnnotation
+        annotation is MosaicAnnotation || annotation is MagnifierAnnotation
     }
 
     private func hitTestSelectionHandle(at point: NSPoint) -> HandleDragState.Kind? {
@@ -1747,46 +1794,119 @@ class EditCanvasView: NSView {
             }
 
         case .resize(let anchor):
-            guard let mosaic = state.original as? MosaicAnnotation else { return }
-            // Move only the edge(s) this grip owns; the opposite edge(s)
-            // stay pinned. min/abs keep the rect valid if the user drags a
-            // grip past its opposite side.
-            let o = mosaic.rect
-            var minX = o.minX, maxX = o.maxX
-            var minY = o.minY, maxY = o.maxY
-            if anchor.movesMinX { minX = currentMouse.x }
-            if anchor.movesMaxX { maxX = currentMouse.x }
-            if anchor.movesMinY { minY = currentMouse.y }
-            if anchor.movesMaxY { maxY = currentMouse.y }
-            let newRect = NSRect(
-                x: min(minX, maxX),
-                y: min(minY, maxY),
-                width: abs(maxX - minX),
-                height: abs(maxY - minY)
-            )
-            guard newRect.width >= 4, newRect.height >= 4 else { return }
-            // Re-pixelate from the untouched base image so the mosaic always
-            // covers whatever content the new rect frames (rather than
-            // stretching the old pixels).
-            guard
-                let baseImage = resolveBaseImageForEditing(),
-                let region = MosaicTool.createMosaicRegion(
-                    rect: newRect,
-                    imageSize: bounds.size,
-                    baseImage: baseImage,
-                    blockSize: currentMosaicBlockSize
+            if let magnifier = state.original as? MagnifierAnnotation {
+                // Circular lens — keep the center pinned and set the radius
+                // to the cursor's distance from it. Every grip behaves the
+                // same; it's the natural gesture for a circle.
+                let r = hypot(
+                    currentMouse.x - magnifier.center.x,
+                    currentMouse.y - magnifier.center.y
                 )
-            else { return }
-            annotations[state.index] = MosaicAnnotation(
-                rect: region.rect,
-                pixelatedImage: region.pixelatedImage
-            )
+                guard r >= MagnifierAnnotation.minRadius else { return }
+                annotations[state.index] = MagnifierAnnotation(
+                    center: magnifier.center,
+                    radius: r,
+                    zoom: magnifier.zoom,
+                    sourceImage: magnifier.sourceImage
+                )
+            } else if let mosaic = state.original as? MosaicAnnotation {
+                // Move only the edge(s) this grip owns; the opposite edge(s)
+                // stay pinned. min/abs keep the rect valid if the user drags a
+                // grip past its opposite side.
+                let o = mosaic.rect
+                var minX = o.minX, maxX = o.maxX
+                var minY = o.minY, maxY = o.maxY
+                if anchor.movesMinX { minX = currentMouse.x }
+                if anchor.movesMaxX { maxX = currentMouse.x }
+                if anchor.movesMinY { minY = currentMouse.y }
+                if anchor.movesMaxY { maxY = currentMouse.y }
+                let newRect = NSRect(
+                    x: min(minX, maxX),
+                    y: min(minY, maxY),
+                    width: abs(maxX - minX),
+                    height: abs(maxY - minY)
+                )
+                guard newRect.width >= 4, newRect.height >= 4 else { return }
+                // Re-pixelate from the untouched base image so the mosaic
+                // always covers whatever content the new rect frames (rather
+                // than stretching the old pixels).
+                guard
+                    let baseImage = resolveBaseImageForEditing(),
+                    let region = MosaicTool.createMosaicRegion(
+                        rect: newRect,
+                        imageSize: bounds.size,
+                        baseImage: baseImage,
+                        blockSize: currentMosaicBlockSize
+                    )
+                else { return }
+                annotations[state.index] = MosaicAnnotation(
+                    rect: region.rect,
+                    pixelatedImage: region.pixelatedImage
+                )
+            }
         }
 
         needsDisplay = true
     }
 
     // MARK: - Cursor
+
+    /// Cursor shown while the magnifier tool is active and the pointer is
+    /// over empty canvas — a loupe glyph with a dark halo so it reads on any
+    /// background. The hotspot is the lens center, where a drag drops the
+    /// lens. The drawing handler is resolution-independent, so the cursor
+    /// stays crisp on Retina displays.
+    private static let magnifierCursor: NSCursor = {
+        let size: CGFloat = 28
+        let lensCenter = NSPoint(x: 11, y: 17)
+        let lensRadius: CGFloat = 7
+
+        let image = NSImage(size: NSSize(width: size, height: size), flipped: false) { _ in
+            let lens = NSBezierPath(ovalIn: NSRect(
+                x: lensCenter.x - lensRadius,
+                y: lensCenter.y - lensRadius,
+                width: lensRadius * 2,
+                height: lensRadius * 2
+            ))
+
+            // Handle — from the lens's lower-right edge toward the corner.
+            let diag = CGFloat(2).squareRoot() / 2
+            let handleStart = NSPoint(
+                x: lensCenter.x + lensRadius * diag,
+                y: lensCenter.y - lensRadius * diag
+            )
+            let handle = NSBezierPath()
+            handle.lineCapStyle = .round
+            handle.move(to: handleStart)
+            handle.line(to: NSPoint(x: handleStart.x + 7.5, y: handleStart.y - 7.5))
+
+            // "+" inside the lens, echoing the toolbar icon.
+            let arm: CGFloat = 3.4
+            let plus = NSBezierPath()
+            plus.lineCapStyle = .round
+            plus.move(to: NSPoint(x: lensCenter.x - arm, y: lensCenter.y))
+            plus.line(to: NSPoint(x: lensCenter.x + arm, y: lensCenter.y))
+            plus.move(to: NSPoint(x: lensCenter.x, y: lensCenter.y - arm))
+            plus.line(to: NSPoint(x: lensCenter.x, y: lensCenter.y + arm))
+
+            // Dark halo pass — fatter strokes underneath for contrast.
+            NSColor.black.withAlphaComponent(0.55).setStroke()
+            lens.lineWidth = 5;   lens.stroke()
+            handle.lineWidth = 7; handle.stroke()
+            plus.lineWidth = 4;   plus.stroke()
+
+            // White body pass.
+            NSColor.white.setStroke()
+            lens.lineWidth = 2;     lens.stroke()
+            handle.lineWidth = 3.5; handle.stroke()
+            plus.lineWidth = 1.8;   plus.stroke()
+            return true
+        }
+        return NSCursor(
+            image: image,
+            hotSpot: NSPoint(x: lensCenter.x, y: size - lensCenter.y)
+        )
+    }()
 
     override func updateTrackingAreas() {
         super.updateTrackingAreas()
@@ -1844,6 +1964,12 @@ class EditCanvasView: NSView {
         // can be picked up regardless of the active tool.
         if hitTestAnnotation(at: point) != nil {
             NSCursor.openHand.set()
+            return
+        }
+        // Magnifier tool over empty canvas: a loupe cursor signals that a
+        // drag here drops a lens.
+        if activeTool == .magnifier {
+            EditCanvasView.magnifierCursor.set()
             return
         }
         NSCursor.arrow.set()
