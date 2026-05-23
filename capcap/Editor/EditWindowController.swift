@@ -74,6 +74,9 @@ class EditWindowController {
     /// marker preserves each tool's last-used choice.
     private var currentMarkerColor: NSColor = NSColor(red: 1.0, green: 0.85, blue: 0.0, alpha: 1.0)
     private var currentMarkerLineWidth: CGFloat = 4.0
+    /// Last color sampled from the toolbar eyedropper. Persisted locally and
+    /// shown as an extra swatch for color-capable annotation tools.
+    private var pickedColorSwatch: NSColor?
 
     var isTextEditing: Bool {
         canvasView?.isTextEditing == true
@@ -101,6 +104,7 @@ class EditWindowController {
         self.windowBaseImage = windowBaseImage
         self.isWindowCapture = isWindowCapture
         self.onComplete = onComplete
+        self.pickedColorSwatch = Self.color(fromHex: Defaults.lastPickedColorHex)
     }
 
     func show() {
@@ -367,6 +371,7 @@ class EditWindowController {
         case .pen, .rectangle, .ellipse, .arrow, .line:
             showColorSizeSubToolbar(
                 sizes: [2, 4, 6],
+                dynamicColor: pickedColorSwatch,
                 currentSize: currentLineWidth,
                 onSize: { [weak self] size in
                     self?.currentLineWidth = size
@@ -377,6 +382,7 @@ class EditWindowController {
             showColorSizeSubToolbar(
                 sizes: [3, 5, 8],
                 currentColor: currentMarkerColor,
+                dynamicColor: pickedColorSwatch,
                 currentSize: currentMarkerLineWidth,
                 onColor: { [weak self] color in
                     self?.currentMarkerColor = color
@@ -392,8 +398,9 @@ class EditWindowController {
         case .numbered:
             showColorSizeSubToolbar(
                 sizes: [],
+                dynamicColor: pickedColorSwatch,
                 currentSize: 0,
-                width: 200
+                width: pickedColorSwatch == nil ? 200 : 225
             )
         case .mosaic, .eraser:
             // These tools have no sub-toolbar — drag a rectangle on canvas.
@@ -406,6 +413,7 @@ class EditWindowController {
     private func showColorSizeSubToolbar(
         sizes: [CGFloat],
         currentColor: NSColor? = nil,
+        dynamicColor: NSColor? = nil,
         currentSize: CGFloat,
         width: CGFloat = 300,
         onColor: ((NSColor) -> Void)? = nil,
@@ -426,6 +434,7 @@ class EditWindowController {
             frame: subRect,
             sizes: sizes,
             currentColor: resolvedColor,
+            dynamicColor: dynamicColor,
             currentSize: currentSize
         )
         view.onColorChanged = { [weak self] color in
@@ -453,7 +462,7 @@ class EditWindowController {
         guard let hostSelectionView, let toolbarFrame = subToolbarAnchorFrame else { return }
         let offset: CGFloat = isBeautifyActive ? (36 + 4) : 0
         let subRect = subToolbarRect(
-            width: TextSubToolbar.preferredWidth,
+            width: TextSubToolbar.preferredWidth(dynamicColor: pickedColorSwatch),
             height: 36,
             toolbarFrame: toolbarFrame,
             in: hostSelectionView.bounds,
@@ -464,6 +473,7 @@ class EditWindowController {
             frame: subRect,
             currentColor: currentColor,
             currentFontSize: currentFontSize,
+            dynamicColor: pickedColorSwatch,
             strokeEnabled: currentTextStroke
         )
         view.onColorChanged = { [weak self] color in
@@ -1165,26 +1175,59 @@ class EditWindowController {
         onComplete(nil)
     }
 
+    private func toolUsesPickedColorSwatch(_ tool: EditTool) -> Bool {
+        switch tool {
+        case .rectangle, .ellipse, .line, .arrow, .pen, .marker, .numbered, .text:
+            return true
+        default:
+            return false
+        }
+    }
+
+    private static func color(fromHex hex: String?) -> NSColor? {
+        guard var trimmed = hex?.trimmingCharacters(in: .whitespacesAndNewlines).uppercased() else {
+            return nil
+        }
+        if trimmed.hasPrefix("#") { trimmed.removeFirst() }
+        guard trimmed.count == 6, let value = UInt32(trimmed, radix: 16) else { return nil }
+        let r = CGFloat((value >> 16) & 0xFF) / 255.0
+        let g = CGFloat((value >> 8) & 0xFF) / 255.0
+        let b = CGFloat(value & 0xFF) / 255.0
+        return NSColor(srgbRed: r, green: g, blue: b, alpha: 1.0)
+    }
+
     /// Trigger the system color sampler (loupe). The picked color's hex is
-    /// copied to the clipboard and a toast confirms it. Does NOT change the
-    /// current pen / marker color — pure pick-and-copy.
+    /// copied to the clipboard and the color becomes an extra reusable swatch
+    /// for color-capable tools. It does not directly change the active tool
+    /// color.
     private func runColorPicker() {
         canvasView?.commitActiveTextEditing()
         let sampler = NSColorSampler()
         sampler.show { [weak self] picked in
-            guard let picked else { return }
+            guard let self, let picked else { return }
             let rgb = picked.usingColorSpace(.sRGB) ?? picked
             let r = Int(round(max(0, min(1, rgb.redComponent)) * 255))
             let g = Int(round(max(0, min(1, rgb.greenComponent)) * 255))
             let b = Int(round(max(0, min(1, rgb.blueComponent)) * 255))
             let hex = String(format: "#%02X%02X%02X", r, g, b)
+            let swatchColor = NSColor(
+                srgbRed: CGFloat(r) / 255.0,
+                green: CGFloat(g) / 255.0,
+                blue: CGFloat(b) / 255.0,
+                alpha: 1.0
+            )
 
             let pasteboard = NSPasteboard.general
             pasteboard.clearContents()
             pasteboard.setString(hex, forType: .string)
 
             HistoryManager.shared.addColor(hex: hex)
-            ToastWindow.show(message: L10n.colorCopied(hex), on: self?.screen)
+            Defaults.lastPickedColorHex = hex
+            self.pickedColorSwatch = swatchColor
+            if self.toolUsesPickedColorSwatch(self.activeTool) {
+                self.showSubToolbar(for: self.activeTool)
+            }
+            ToastWindow.show(message: L10n.colorCopied(hex), on: self.screen)
         }
     }
 
@@ -2249,7 +2292,8 @@ private class ColorSizeSubToolbar: NSView {
     private var colorButtons: [NSView] = []
 
     private let sizes: [CGFloat]
-    private let colors: [NSColor] = [
+    private let dynamicColor: NSColor?
+    private let baseColors: [NSColor] = [
         NSColor(red: 1.0, green: 0.23, blue: 0.19, alpha: 1.0),   // Red
         NSColor(red: 0.0, green: 0.48, blue: 1.0, alpha: 1.0),    // Blue
         NSColor(red: 0.0, green: 0.83, blue: 0.42, alpha: 1.0),   // Green
@@ -2259,15 +2303,21 @@ private class ColorSizeSubToolbar: NSView {
         NSColor(white: 0.5, alpha: 1.0),                           // Gray
         .black,
     ]
+    private var colors: [NSColor] {
+        guard let dynamicColor else { return baseColors }
+        return baseColors + [dynamicColor]
+    }
 
     init(
         frame: NSRect,
         sizes: [CGFloat] = [2, 4, 6],
         currentColor: NSColor = .red,
+        dynamicColor: NSColor? = nil,
         currentSize: CGFloat = 3.0
     ) {
         self.sizes = sizes
         self.currentColor = currentColor
+        self.dynamicColor = dynamicColor
         self.currentSize = currentSize
         super.init(frame: frame)
         setup()
@@ -2337,8 +2387,9 @@ private class ColorSizeSubToolbar: NSView {
     @objc private func colorTapped(_ gesture: NSGestureRecognizer) {
         guard let view = gesture.view as? ColorSwatchView else { return }
         let index = view.itemIndex
-        guard index < colors.count else { return }
-        currentColor = colors[index]
+        let paletteColors = colors
+        guard index < paletteColors.count else { return }
+        currentColor = paletteColors[index]
         onColorChanged?(currentColor)
         updateColorSelection()
     }
@@ -2350,8 +2401,9 @@ private class ColorSizeSubToolbar: NSView {
     }
 
     private func updateColorSelection() {
-        for (i, view) in colorButtons.enumerated() {
-            (view as? ColorSwatchView)?.isSelected = colorsMatch(colors[i], currentColor)
+        let paletteColors = colors
+        for (i, view) in colorButtons.enumerated() where i < paletteColors.count {
+            (view as? ColorSwatchView)?.isSelected = colorsMatch(paletteColors[i], currentColor)
         }
     }
 
@@ -2393,7 +2445,8 @@ private class TextSubToolbar: NSView {
     private var sizeLabel: NSTextField!
     private var strokeCheckbox: HUDCheckboxButton!
 
-    private let colors: [NSColor] = [
+    private let dynamicColor: NSColor?
+    private let baseColors: [NSColor] = [
         NSColor(red: 1.0, green: 0.23, blue: 0.19, alpha: 1.0),   // Red
         NSColor(red: 0.0, green: 0.48, blue: 1.0, alpha: 1.0),    // Blue
         NSColor(red: 0.0, green: 0.83, blue: 0.42, alpha: 1.0),   // Green
@@ -2403,6 +2456,10 @@ private class TextSubToolbar: NSView {
         NSColor(white: 0.5, alpha: 1.0),                           // Gray
         .black,
     ]
+    private var colors: [NSColor] {
+        guard let dynamicColor else { return baseColors }
+        return baseColors + [dynamicColor]
+    }
 
     // Layout metrics, shared between `setup()` and `preferredWidth` so the
     // view is always wide enough for everything it lays out.
@@ -2414,11 +2471,13 @@ private class TextSubToolbar: NSView {
     private static let separatorGap: CGFloat = 6
     private static let checkboxGap: CGFloat = 8
     private static let trailingPad: CGFloat = 12
+    private static let baseColorCount: CGFloat = 8
 
     /// Right edge of the last color swatch — the swatch row's extent.
-    private static var swatchRowEnd: CGFloat {
-        leadingPad + labelWidth + 6 + sliderWidth + 8 + 1 + 9
-            + 8 * swatchSize + 7 * swatchGap
+    private static func swatchRowEnd(hasDynamicColor: Bool) -> CGFloat {
+        let colorCount = baseColorCount + (hasDynamicColor ? 1.0 : 0.0)
+        return leadingPad + labelWidth + 6 + sliderWidth + 8 + 1 + 9
+            + colorCount * swatchSize + max(colorCount - 1, 0) * swatchGap
     }
 
     private static func checkboxWidth() -> CGFloat {
@@ -2427,13 +2486,21 @@ private class TextSubToolbar: NSView {
         return 16 + 8 + textWidth
     }
 
-    static var preferredWidth: CGFloat {
-        swatchRowEnd + separatorGap + 1 + checkboxGap + checkboxWidth() + trailingPad
+    static func preferredWidth(dynamicColor: NSColor?) -> CGFloat {
+        swatchRowEnd(hasDynamicColor: dynamicColor != nil)
+            + separatorGap + 1 + checkboxGap + checkboxWidth() + trailingPad
     }
 
-    init(frame: NSRect, currentColor: NSColor, currentFontSize: CGFloat, strokeEnabled: Bool) {
+    init(
+        frame: NSRect,
+        currentColor: NSColor,
+        currentFontSize: CGFloat,
+        dynamicColor: NSColor? = nil,
+        strokeEnabled: Bool
+    ) {
         self.currentColor = currentColor
         self.currentFontSize = currentFontSize
+        self.dynamicColor = dynamicColor
         self.strokeEnabled = strokeEnabled
         super.init(frame: frame)
         setup()
@@ -2557,11 +2624,12 @@ private class TextSubToolbar: NSView {
     @objc private func colorTapped(_ gesture: NSGestureRecognizer) {
         guard let view = gesture.view as? ColorSwatchView else { return }
         let index = view.itemIndex
-        guard index < colors.count else { return }
-        currentColor = colors[index]
+        let paletteColors = colors
+        guard index < paletteColors.count else { return }
+        currentColor = paletteColors[index]
         onColorChanged?(currentColor)
-        for (i, v) in colorButtons.enumerated() {
-            (v as? ColorSwatchView)?.isSelected = colorsMatch(colors[i], currentColor)
+        for (i, v) in colorButtons.enumerated() where i < paletteColors.count {
+            (v as? ColorSwatchView)?.isSelected = colorsMatch(paletteColors[i], currentColor)
         }
     }
 

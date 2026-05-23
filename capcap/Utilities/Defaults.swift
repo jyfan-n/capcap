@@ -758,6 +758,26 @@ struct Defaults {
         set { defaults.set(newValue, forKey: "lastTextStroke") }
     }
 
+    static var lastPickedColorHex: String? {
+        get { normalizedHexColor(defaults.string(forKey: "lastPickedColorHex")) }
+        set {
+            if let normalized = normalizedHexColor(newValue) {
+                defaults.set(normalized, forKey: "lastPickedColorHex")
+            } else {
+                defaults.removeObject(forKey: "lastPickedColorHex")
+            }
+        }
+    }
+
+    private static func normalizedHexColor(_ hex: String?) -> String? {
+        guard var trimmed = hex?.trimmingCharacters(in: .whitespacesAndNewlines).uppercased() else {
+            return nil
+        }
+        if trimmed.hasPrefix("#") { trimmed.removeFirst() }
+        guard trimmed.count == 6, UInt32(trimmed, radix: 16) != nil else { return nil }
+        return "#\(trimmed)"
+    }
+
     static var lastBeautifyPresetID: String? {
         get { defaults.string(forKey: "lastBeautifyPresetID") }
         set { defaults.set(newValue, forKey: "lastBeautifyPresetID") }
