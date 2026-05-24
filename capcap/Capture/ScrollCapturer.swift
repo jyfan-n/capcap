@@ -93,15 +93,62 @@ final class ScrollCapturer {
         return outcome
     }
 
+    /// Captures a frame, polling until two consecutive captures produce
+    /// byte-identical TIFF data (the page has stopped re-rendering) or a
+    /// timeout elapses. This guards the Vision-based overlap detector
+    /// against measuring an in-progress smooth-scroll animation — without
+    /// it, fast synthetic scrolls catch the page mid-render and Vision
+    /// reports partial offsets that defeat the stitching loop.
+    ///
+    /// Returns the settled image, or the most-recent capture if settlement
+    /// times out (so the loop still progresses rather than failing hard).
+    private func captureSettledFrame() -> NSImage? {
+        var previousData: Data? = nil
+        var lastImage: NSImage? = nil
+        var waitNs: UInt64 = 12_000_000   // start polling at 12ms
+
+        // ~20 iterations × 12–80ms backoff ≈ up to ~1s total wait, which is
+        // more than enough for typical smooth-scroll animations (150–300ms).
+        for _ in 0..<20 {
+            guard let image = ScreenCapturer.capture(
+                rect: captureRect,
+                screen: screen,
+                excludingWindowNumbers: excludedWindowNumbers
+            ) else {
+                Thread.sleep(forTimeInterval: 0.03)
+                continue
+            }
+
+            // TIFF byte representation: a deterministic per-pixel signature.
+            // Two consecutive identical TIFFs = the compositor isn't drawing
+            // anything new, so the page is settled.
+            guard let signature = image.tiffRepresentation else {
+                Thread.sleep(forTimeInterval: Double(waitNs) / 1_000_000_000)
+                continue
+            }
+
+            if let prev = previousData, prev == signature {
+                return image
+            }
+
+            previousData = signature
+            lastImage = image
+            Thread.sleep(forTimeInterval: Double(waitNs) / 1_000_000_000)
+            // Geometric backoff so we don't busy-poll for long animations.
+            waitNs = min(waitNs * 3 / 2, 80_000_000)
+        }
+
+        // Timeout — return whatever we have. The caller's dedup check
+        // (imagesAreNearlyIdentical) will still catch the no-progress case
+        // and report .noNewContent appropriately.
+        return lastImage
+    }
+
     @discardableResult
     private func captureFrame(expectedShiftPoints: CGFloat) -> FrameOutcome {
         guard frames.count < maxFrames else { return .atFrameLimit }
         guard
-            let image = ScreenCapturer.capture(
-                rect: captureRect,
-                screen: screen,
-                excludingWindowNumbers: excludedWindowNumbers
-            ),
+            let image = captureSettledFrame(),
             let bitmap = bitmapData(from: image)
         else {
             return .noNewContent
