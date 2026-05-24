@@ -1,4 +1,5 @@
 import AppKit
+import Vision
 
 final class ScrollCapturer {
     private struct ImageFormat {
@@ -11,18 +12,6 @@ final class ScrollCapturer {
     private struct CapturedFrame {
         let image: NSImage
         let bitmap: BitmapData
-    }
-
-    private struct SearchHint {
-        let overlapPixels: Int
-        let tolerancePixels: Int
-        let strength: Double
-    }
-
-    private struct OverlapCandidate {
-        let overlapPixels: Int
-        let rawScore: Double
-        let adjustedScore: Double
     }
 
     /// Result of a single capture attempt, used by auto-scroll to decide
@@ -48,7 +37,6 @@ final class ScrollCapturer {
 
     private var frames: [CapturedFrame] = []
     private var overlaps: [Int] = []
-    private var recentNewContentPixels: [Int] = []
 
     // Incremental preview state
     private var previewBitmap: BitmapData?
@@ -152,7 +140,6 @@ final class ScrollCapturer {
 
         frames.append(candidateFrame)
         overlaps.append(overlap)
-        rememberNewContentPixels(newRows)
         appendToPreview(candidateFrame.bitmap, overlapPixels: overlap)
         return .appended
     }
@@ -271,298 +258,48 @@ final class ScrollCapturer {
 
     // MARK: - Overlap Detection
 
+    /// Computes how many rows at the top of `current` overlap with the bottom of
+    /// `previous`, using Apple Vision's translational image registration. Vision
+    /// is significantly more accurate than per-row pixel matching on content
+    /// where neighbouring rows look nearly identical (text, code, chat logs):
+    /// it considers the whole image as a 2D signal rather than scoring rows
+    /// independently, so it doesn't snap to wrong-but-locally-plausible offsets.
+    ///
+    /// The returned value is in pixels and lies in `0...min(previous.height, current.height)`.
+    /// `expectedNewContentPixels` is retained in the signature for source
+    /// compatibility with the caller but is no longer consulted — Vision needs
+    /// no hint.
     private func findOverlap(
         previous: BitmapData,
         current: BitmapData,
         expectedNewContentPixels: Int?
     ) -> Int {
-        let width = min(previous.width, current.width)
         let height = min(previous.height, current.height)
-        guard width > 0, height > 0 else { return 0 }
+        guard height > 0 else { return 0 }
 
-        let minNewContent = max(8, height / 200)
-        let minOverlap = max(12, height / 40)
-        let maxOverlap = height - minNewContent
-        guard minOverlap <= maxOverlap else { return 0 }
-
-        let sampleCols = sampledColumns(width: width, count: min(44, max(20, width / 18)))
-        let previousRowEnergy = rowEnergies(in: previous, sampleCols: sampleCols)
-        let currentRowEnergy = rowEnergies(in: current, sampleCols: sampleCols)
-        let fullRange = minOverlap...maxOverlap
-        let hint = overlapHint(
-            height: height,
-            minNewContent: minNewContent,
-            minOverlap: minOverlap,
-            maxOverlap: maxOverlap,
-            explicitNewContentPixels: expectedNewContentPixels
-        )
-
-        let coarseStep = max(2, height / 140)
-        var coarseCandidates = collectCoarseCandidates(
-            in: preferredRange(for: hint, boundedBy: fullRange),
-            step: coarseStep,
-            previous: previous,
-            current: current,
-            height: height,
-            sampleCols: sampleCols,
-            previousRowEnergy: previousRowEnergy,
-            currentRowEnergy: currentRowEnergy,
-            hint: hint,
-            maxSampleRows: 40,
-            limit: 6
-        )
-
-        if preferredRange(for: hint, boundedBy: fullRange) != fullRange {
-            coarseCandidates.append(contentsOf: collectCoarseCandidates(
-                in: fullRange,
-                step: max(4, coarseStep * 2),
-                previous: previous,
-                current: current,
-                height: height,
-                sampleCols: sampleCols,
-                previousRowEnergy: previousRowEnergy,
-                currentRowEnergy: currentRowEnergy,
-                hint: hint,
-                maxSampleRows: 28,
-                limit: 4
-            ))
+        guard let previousCG = previous.makeCGImage(pixelHeight: previous.height),
+              let currentCG = current.makeCGImage(pixelHeight: current.height) else {
+            return height
         }
 
-        guard !coarseCandidates.isEmpty else { return hint?.overlapPixels ?? 0 }
+        let request = VNTranslationalImageRegistrationRequest(targetedCGImage: previousCG)
+        let handler = VNImageRequestHandler(cgImage: currentCG, options: [:])
 
-        let fineCandidates = refineCandidates(
-            coarseCandidates,
-            fullRange: fullRange,
-            coarseStep: coarseStep,
-            previous: previous,
-            current: current,
-            height: height,
-            sampleCols: sampleCols,
-            previousRowEnergy: previousRowEnergy,
-            currentRowEnergy: currentRowEnergy,
-            hint: hint
-        )
-
-        guard !fineCandidates.isEmpty else { return hint?.overlapPixels ?? 0 }
-        let sorted = fineCandidates.sorted(by: compareCandidates(_:_:))
-        let bestCandidate = sorted[0]
-
-        if bestCandidate.rawScore > 20, let hint {
-            if let hintedCandidate = fineCandidates.first(where: { $0.overlapPixels == hint.overlapPixels }),
-               hintedCandidate.rawScore <= bestCandidate.rawScore + 4 {
-                return hintedCandidate.overlapPixels
-            }
+        guard (try? handler.perform([request])) != nil,
+              let observation = request.results?.first as? VNImageTranslationAlignmentObservation
+        else {
+            return height
         }
 
-        return bestCandidate.overlapPixels
-    }
+        // alignmentTransform.ty is the pixel distance the source (current frame)
+        // must be shifted to align with the target (previous frame). For a page
+        // that scrolled DOWN between frames, this comes out positive and equals
+        // the height of newly-revealed content at the bottom of `current`.
+        let newContentPx = Int(observation.alignmentTransform.ty.rounded())
+        guard newContentPx > 0 else { return height }  // upward scroll or no shift
 
-    private func overlapHint(
-        height: Int,
-        minNewContent: Int,
-        minOverlap: Int,
-        maxOverlap: Int,
-        explicitNewContentPixels: Int?
-    ) -> SearchHint? {
-        let maxNewContent = height - minOverlap
-
-        if let explicitNewContentPixels, explicitNewContentPixels > 0 {
-            let clampedNewContent = clamp(explicitNewContentPixels, min: minNewContent, max: maxNewContent)
-            return SearchHint(
-                overlapPixels: height - clampedNewContent,
-                tolerancePixels: max(28, min(height / 3, clampedNewContent / 2 + 24)),
-                strength: 4.0
-            )
-        }
-
-        guard let rollingMedian = median(of: recentNewContentPixels.suffix(5)) else { return nil }
-        let clampedNewContent = clamp(rollingMedian, min: minNewContent, max: maxNewContent)
-
-        return SearchHint(
-            overlapPixels: height - clampedNewContent,
-            tolerancePixels: max(48, min(height / 2, clampedNewContent)),
-            strength: 1.8
-        )
-    }
-
-    private func preferredRange(for hint: SearchHint?, boundedBy fullRange: ClosedRange<Int>) -> ClosedRange<Int> {
-        guard let hint else { return fullRange }
-
-        let lower = max(fullRange.lowerBound, hint.overlapPixels - hint.tolerancePixels)
-        let upper = min(fullRange.upperBound, hint.overlapPixels + hint.tolerancePixels)
-        if lower > upper {
-            return fullRange
-        }
-        return lower...upper
-    }
-
-    private func collectCoarseCandidates(
-        in range: ClosedRange<Int>,
-        step: Int,
-        previous: BitmapData,
-        current: BitmapData,
-        height: Int,
-        sampleCols: [Int],
-        previousRowEnergy: [Int],
-        currentRowEnergy: [Int],
-        hint: SearchHint?,
-        maxSampleRows: Int,
-        limit: Int
-    ) -> [OverlapCandidate] {
-        var candidates: [OverlapCandidate] = []
-
-        for overlap in stride(from: range.lowerBound, through: range.upperBound, by: step) {
-            let rawScore = overlapScore(
-                previous: previous,
-                current: current,
-                overlapPixels: overlap,
-                height: height,
-                sampleCols: sampleCols,
-                previousRowEnergy: previousRowEnergy,
-                currentRowEnergy: currentRowEnergy,
-                maxSampleRows: maxSampleRows
-            )
-
-            guard rawScore.isFinite else { continue }
-
-            let candidate = OverlapCandidate(
-                overlapPixels: overlap,
-                rawScore: rawScore,
-                adjustedScore: rawScore + priorPenalty(for: overlap, hint: hint)
-            )
-
-            candidates.append(candidate)
-        }
-
-        return Array(candidates.sorted(by: compareCandidates(_:_:)).prefix(limit))
-    }
-
-    private func refineCandidates(
-        _ coarseCandidates: [OverlapCandidate],
-        fullRange: ClosedRange<Int>,
-        coarseStep: Int,
-        previous: BitmapData,
-        current: BitmapData,
-        height: Int,
-        sampleCols: [Int],
-        previousRowEnergy: [Int],
-        currentRowEnergy: [Int],
-        hint: SearchHint?
-    ) -> [OverlapCandidate] {
-        var overlapsToCheck = Set<Int>()
-
-        for candidate in coarseCandidates {
-            let lower = max(fullRange.lowerBound, candidate.overlapPixels - coarseStep * 2)
-            let upper = min(fullRange.upperBound, candidate.overlapPixels + coarseStep * 2)
-            for overlap in lower...upper {
-                overlapsToCheck.insert(overlap)
-            }
-        }
-
-        if let hint {
-            let lower = max(fullRange.lowerBound, hint.overlapPixels - max(8, hint.tolerancePixels / 3))
-            let upper = min(fullRange.upperBound, hint.overlapPixels + max(8, hint.tolerancePixels / 3))
-            for overlap in lower...upper {
-                overlapsToCheck.insert(overlap)
-            }
-        }
-
-        return overlapsToCheck.map { overlap in
-            let rawScore = overlapScore(
-                previous: previous,
-                current: current,
-                overlapPixels: overlap,
-                height: height,
-                sampleCols: sampleCols,
-                previousRowEnergy: previousRowEnergy,
-                currentRowEnergy: currentRowEnergy,
-                maxSampleRows: 96
-            )
-
-            return OverlapCandidate(
-                overlapPixels: overlap,
-                rawScore: rawScore,
-                adjustedScore: rawScore + priorPenalty(for: overlap, hint: hint)
-            )
-        }.filter(\.rawScore.isFinite)
-    }
-
-    private func overlapScore(
-        previous: BitmapData,
-        current: BitmapData,
-        overlapPixels: Int,
-        height: Int,
-        sampleCols: [Int],
-        previousRowEnergy: [Int],
-        currentRowEnergy: [Int],
-        maxSampleRows: Int
-    ) -> Double {
-        guard overlapPixels > 0 else { return .greatestFiniteMagnitude }
-
-        let rowSampleCount = min(overlapPixels, maxSampleRows)
-        let rowStep = max(1, overlapPixels / rowSampleCount)
-
-        var weightedDiff = 0
-        var totalWeight = 0
-        var informativeRows = 0
-
-        for row in stride(from: 0, to: overlapPixels, by: rowStep) {
-            let previousRow = height - overlapPixels + row
-            let currentRow = row
-            let rowEnergy = max(previousRowEnergy[previousRow], currentRowEnergy[currentRow])
-            let weight = max(1, rowEnergy / 6)
-            var rowDiff = 0
-
-            for col in sampleCols {
-                rowDiff += pixelDiff(previous.pixel(x: col, y: previousRow), current.pixel(x: col, y: currentRow))
-            }
-
-            weightedDiff += rowDiff * weight
-            totalWeight += sampleCols.count * weight
-            if rowEnergy > 10 {
-                informativeRows += 1
-            }
-        }
-
-        guard totalWeight > 0 else { return .greatestFiniteMagnitude }
-        guard informativeRows >= max(2, rowSampleCount / 12) else { return .greatestFiniteMagnitude }
-
-        return Double(weightedDiff) / Double(totalWeight)
-    }
-
-    private func priorPenalty(for overlapPixels: Int, hint: SearchHint?) -> Double {
-        guard let hint else { return 0 }
-
-        let distance = abs(overlapPixels - hint.overlapPixels)
-        let normalized = Double(distance) / Double(max(1, hint.tolerancePixels))
-        if distance <= hint.tolerancePixels {
-            return normalized * hint.strength
-        }
-
-        return normalized * hint.strength * 2.2
-    }
-
-    private func compareCandidates(_ lhs: OverlapCandidate, _ rhs: OverlapCandidate) -> Bool {
-        let scoreGap = abs(lhs.adjustedScore - rhs.adjustedScore)
-        if scoreGap < 0.75 {
-            if lhs.overlapPixels != rhs.overlapPixels {
-                return lhs.overlapPixels > rhs.overlapPixels
-            }
-            return lhs.rawScore < rhs.rawScore
-        }
-
-        if lhs.adjustedScore != rhs.adjustedScore {
-            return lhs.adjustedScore < rhs.adjustedScore
-        }
-
-        return lhs.rawScore < rhs.rawScore
-    }
-
-    private func rememberNewContentPixels(_ pixels: Int) {
-        recentNewContentPixels.append(pixels)
-        if recentNewContentPixels.count > 6 {
-            recentNewContentPixels.removeFirst(recentNewContentPixels.count - 6)
-        }
+        let overlap = height - newContentPx
+        return max(0, min(height, overlap))
     }
 
     // MARK: - Image Helpers
@@ -628,27 +365,6 @@ final class ScrollCapturer {
         return rows
     }
 
-    private func rowEnergies(in bitmap: BitmapData, sampleCols: [Int]) -> [Int] {
-        guard sampleCols.count > 1 else { return Array(repeating: 1, count: bitmap.height) }
-
-        return (0..<bitmap.height).map { row in
-            var total = 0
-            var previousLuma = luminance(of: bitmap.pixel(x: sampleCols[0], y: row))
-
-            for col in sampleCols.dropFirst() {
-                let currentLuma = luminance(of: bitmap.pixel(x: col, y: row))
-                total += abs(currentLuma - previousLuma)
-                previousLuma = currentLuma
-            }
-
-            return max(1, total / max(1, sampleCols.count - 1))
-        }
-    }
-
-    private func luminance(of pixel: (r: UInt8, g: UInt8, b: UInt8)) -> Int {
-        (77 * Int(pixel.r) + 150 * Int(pixel.g) + 29 * Int(pixel.b)) >> 8
-    }
-
     private func pixelDiff(_ lhs: (r: UInt8, g: UInt8, b: UInt8), _ rhs: (r: UInt8, g: UInt8, b: UInt8)) -> Int {
         abs(Int(lhs.r) - Int(rhs.r)) +
         abs(Int(lhs.g) - Int(rhs.g)) +
@@ -702,16 +418,6 @@ final class ScrollCapturer {
         }
     }
 
-    private func median<S: Sequence>(of values: S) -> Int? where S.Element == Int {
-        let sorted = values.sorted()
-        guard !sorted.isEmpty else { return nil }
-        return sorted[sorted.count / 2]
-    }
-
-    private func clamp(_ value: Int, min minValue: Int, max maxValue: Int) -> Int {
-        Swift.max(minValue, Swift.min(maxValue, value))
-    }
-
     private final class BitmapData {
         let rep: NSBitmapImageRep
         let data: UnsafeMutablePointer<UInt8>
@@ -763,6 +469,14 @@ final class ScrollCapturer {
         }
 
         func makeImage(pointSize: NSSize, pixelHeight: Int) -> NSImage? {
+            guard let cgImage = makeCGImage(pixelHeight: pixelHeight) else { return nil }
+            return NSImage(cgImage: cgImage, size: pointSize)
+        }
+
+        /// Builds a CGImage covering the top `pixelHeight` rows of this bitmap.
+        /// Shared by `makeImage(pointSize:pixelHeight:)` (the preview/output
+        /// pipeline) and by `findOverlap` (Apple Vision input).
+        func makeCGImage(pixelHeight: Int) -> CGImage? {
             guard pixelHeight > 0, pixelHeight <= height else { return nil }
 
             let byteCount = pixelHeight * bytesPerRow
@@ -770,7 +484,7 @@ final class ScrollCapturer {
             let imageData = Data(buffer: buffer)
 
             guard let provider = CGDataProvider(data: imageData as CFData) else { return nil }
-            guard let cgImage = CGImage(
+            return CGImage(
                 width: width,
                 height: pixelHeight,
                 bitsPerComponent: imageFormat.bitsPerComponent,
@@ -782,11 +496,7 @@ final class ScrollCapturer {
                 decode: nil,
                 shouldInterpolate: false,
                 intent: .defaultIntent
-            ) else {
-                return nil
-            }
-
-            return NSImage(cgImage: cgImage, size: pointSize)
+            )
         }
 
         var bytesPerPixelValue: Int { bytesPerPixel }
