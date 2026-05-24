@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.3.17] - 2026-05-24
+
+### Changed
+- Trigger silent update checks from screenshot shortcuts (69df444)
+
+### Chore
+- Bump cask to 1.3.16 (a3b00c6)
+
 ## [1.3.16] - 2026-05-24
 
 ### Added
