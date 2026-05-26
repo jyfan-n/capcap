@@ -111,8 +111,8 @@ final class ScrollCapturer {
     }
 
     /// Captures a frame, polling until two consecutive captures produce
-    /// byte-identical TIFF data (the page has stopped re-rendering) or a
-    /// timeout elapses. This guards the Vision-based overlap detector
+    /// byte-identical raw pixel data (the page has stopped re-rendering)
+    /// or a timeout elapses. This guards the Vision-based overlap detector
     /// against measuring an in-progress smooth-scroll animation — without
     /// it, fast synthetic scrolls catch the page mid-render and Vision
     /// reports partial offsets that defeat the stitching loop.
@@ -136,10 +136,16 @@ final class ScrollCapturer {
                 continue
             }
 
-            // TIFF byte representation: a deterministic per-pixel signature.
-            // Two consecutive identical TIFFs = the compositor isn't drawing
-            // anything new, so the page is settled.
-            guard let signature = image.tiffRepresentation else {
+            // Compare raw pixel bytes from the CGImage's data provider —
+            // a deterministic per-pixel signature. Two consecutive identical
+            // signatures mean the compositor isn't drawing anything new, so
+            // the page is settled. Using raw bytes avoids the encode /
+            // compress overhead of tiffRepresentation, which matters on
+            // high-DPI displays where the loop runs many times per step.
+            guard
+                let cgImage = image.cgImage(forProposedRect: nil, context: nil, hints: nil),
+                let signature = cgImage.dataProvider?.data as Data?
+            else {
                 Thread.sleep(forTimeInterval: Double(waitNs) / 1_000_000_000)
                 continue
             }
@@ -360,11 +366,16 @@ final class ScrollCapturer {
         // top trimmed — the residual Y shift Vision reports is therefore
         // the shift of post-header content, which is exactly the scroll
         // distance we want.
-        let cropWidth = max(0, currentCG.width - scrollbarWidthPx)
+        // Use the common extent (min of both CGImages) so the crop is
+        // always in-bounds for both — guarantees `cropping(to:)`
+        // succeeds and Vision sees same-sized inputs.
+        let commonWidth = min(currentCG.width, previousCG.width)
+        let commonHeight = min(currentCG.height, previousCG.height)
+        let cropWidth = max(0, commonWidth - scrollbarWidthPx)
         let cropY = stickyHeaderDetectionDone
-            ? min(stickyHeaderPx, currentCG.height / 5)
+            ? min(stickyHeaderPx, commonHeight / 5)
             : 0
-        let cropHeight = currentCG.height - cropY
+        let cropHeight = commonHeight - cropY
 
         let visionPrevious: CGImage
         let visionCurrent: CGImage
@@ -397,7 +408,7 @@ final class ScrollCapturer {
         // First time we see a real shift, try to learn where the sticky
         // header ends so subsequent frames can crop it out.
         if newContentPx > 5 && !stickyHeaderDetectionDone {
-            detectStickyHeader(current: current, previous: previous, shiftPx: newContentPx)
+            detectStickyHeader(current: current, previous: previous)
         }
 
         guard newContentPx > 0 else { return height }  // upward scroll or no shift
@@ -458,8 +469,11 @@ final class ScrollCapturer {
             }
         }
 
-        _ = sawQuietAfterMoving
-        if detectedWidth >= 3 && detectedWidth <= 40 {
+        // Only commit a width if the scan actually observed a moving →
+        // quiet transition at the edge. Without that boundary, the
+        // "moving" region might just be content (e.g., an animation
+        // taking up the whole right area), not a scrollbar.
+        if sawQuietAfterMoving && detectedWidth >= 3 && detectedWidth <= 40 {
             // Small buffer past the detected edge to absorb anti-aliasing
             // fringe and any 1–2 px misalignment in our column sampling.
             scrollbarWidthPx = detectedWidth + 4
@@ -472,7 +486,7 @@ final class ScrollCapturer {
     /// (top nav bar, toolbar, banner). Multiple samples are required to
     /// agree before the value is locked in — a single observation could
     /// be coincidental on a content-light page.
-    private func detectStickyHeader(current: BitmapData, previous: BitmapData, shiftPx: Int) {
+    private func detectStickyHeader(current: BitmapData, previous: BitmapData) {
         let width = min(current.width, previous.width)
         let height = min(current.height, previous.height)
         guard width > 80, height > 40 else {
