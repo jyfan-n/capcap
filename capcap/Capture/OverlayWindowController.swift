@@ -45,6 +45,7 @@ class OverlayWindowController {
     private let windowDetector = WindowDetector()
     private var screenSnapshots: [CGDirectDisplayID: CGImage] = [:]
     private let onComplete: (NSImage?) -> Void
+    private let onRequestFocusReturn: (() -> Void)?
     private let onRecordingSelection: ((NSRect, NSScreen) -> Void)?
     private let postCaptureAction: PostCaptureAction
 
@@ -64,24 +65,28 @@ class OverlayWindowController {
     init(
         postCaptureAction: PostCaptureAction = .edit,
         onRecordingSelection: ((NSRect, NSScreen) -> Void)? = nil,
+        onRequestFocusReturn: (() -> Void)? = nil,
         onComplete: @escaping (NSImage?) -> Void
     ) {
         self.presetImage = nil
         self.presetSource = nil
         self.postCaptureAction = postCaptureAction
         self.onRecordingSelection = onRecordingSelection
+        self.onRequestFocusReturn = onRequestFocusReturn
         self.onComplete = onComplete
     }
 
     init(
         presetImage: NSImage,
         presetSource: PresetSource,
+        onRequestFocusReturn: (() -> Void)? = nil,
         onComplete: @escaping (NSImage?) -> Void
     ) {
         self.presetImage = presetImage
         self.presetSource = presetSource
         self.postCaptureAction = .edit
         self.onRecordingSelection = nil
+        self.onRequestFocusReturn = onRequestFocusReturn
         self.onComplete = onComplete
     }
 
@@ -163,6 +168,9 @@ class OverlayWindowController {
                 return nil
             }
             if self?.editController?.handleAnnotationClipboardShortcutFromKeyboard(for: event) == true {
+                return nil
+            }
+            if self?.editController?.nudgeSelectedAnnotationFromKeyboard(for: event) == true {
                 return nil
             }
             if self?.editController?.deleteSelectedAnnotationFromKeyboard(for: event) == true {
@@ -266,6 +274,7 @@ class OverlayWindowController {
         editController = nil
         tearDown()
         onComplete(nil)
+        onRequestFocusReturn?()
     }
 
     private var cursorPopped = false
@@ -405,7 +414,8 @@ extension OverlayWindowController: SelectionViewDelegate {
                 overrideBaseImage: presetImage,
                 windowBaseImage: windowBaseImage,
                 isWindowCapture: isWindowSelection,
-                onRecordingSelection: onRecordingSelection
+                onRecordingSelection: onRecordingSelection,
+                onRequestFocusReturn: onRequestFocusReturn
             ) { [weak self] finalImage in
                 self?.tearDown()
                 self?.onComplete(finalImage)

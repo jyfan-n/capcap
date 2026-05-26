@@ -219,10 +219,14 @@ class AppDelegate: NSObject, NSApplicationDelegate {
 
     func handleRecordingTrigger() {
         guard overlayController == nil, recordingEngine == nil, !countdownActive else { return }
+        let focusRestorer = SourceAppFocusRestorer.captureFrontmostApplication()
         overlayController = OverlayWindowController(
             postCaptureAction: .record,
             onRecordingSelection: { [weak self] rect, screen in
                 self?.beginRecording(rect: rect, screen: screen)
+            },
+            onRequestFocusReturn: {
+                focusRestorer.restore()
             },
             onComplete: { [weak self] finalImage in
                 self?.handleEditCompletion(finalImage)
@@ -235,6 +239,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     /// Opens the single image currently selected in Finder directly in the
     /// editor. Returns nil when Finder has no exactly-one editable image.
     private func launchSelectedImageEdit() -> OverlayWindowController? {
+        let focusRestorer = SourceAppFocusRestorer.captureFrontmostApplication()
         let onComplete: (NSImage?) -> Void = { [weak self] finalImage in
             self?.handleEditCompletion(finalImage)
         }
@@ -242,6 +247,9 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         if let url = FinderSelection.currentImageFileURL(),
            let controller = ImageEditLauncher.launch(
                sourceURL: url,
+               onRequestFocusReturn: {
+                   focusRestorer.restore()
+               },
                onComplete: onComplete
            ) {
             return controller
@@ -253,6 +261,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     /// Opens the current clipboard image directly in the editor. Returns nil
     /// when the clipboard has no editable image.
     private func launchClipboardImageEdit() -> OverlayWindowController? {
+        let focusRestorer = SourceAppFocusRestorer.captureFrontmostApplication()
         let onComplete: (NSImage?) -> Void = { [weak self] finalImage in
             self?.handleEditCompletion(finalImage)
         }
@@ -260,6 +269,9 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         if let image = ClipboardImageSource.currentImage(),
            let controller = ImageEditLauncher.launch(
                clipboardImage: image,
+               onRequestFocusReturn: {
+                   focusRestorer.restore()
+               },
                onComplete: onComplete
            ) {
             return controller
@@ -331,10 +343,14 @@ class AppDelegate: NSObject, NSApplicationDelegate {
 
     func startCapture(postCaptureAction: OverlayWindowController.PostCaptureAction = .edit) {
         guard overlayController == nil, recordingEngine == nil else { return }
+        let focusRestorer = SourceAppFocusRestorer.captureFrontmostApplication()
         overlayController = OverlayWindowController(
             postCaptureAction: postCaptureAction,
             onRecordingSelection: { [weak self] rect, screen in
                 self?.beginRecording(rect: rect, screen: screen)
+            },
+            onRequestFocusReturn: {
+                focusRestorer.restore()
             },
             onComplete: { [weak self] finalImage in
                 self?.handleEditCompletion(finalImage)

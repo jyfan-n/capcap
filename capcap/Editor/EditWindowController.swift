@@ -18,6 +18,7 @@ class EditWindowController {
     private var selectionViewRect: NSRect
     private let onComplete: (NSImage?) -> Void
     private let onRecordingSelection: ((NSRect, NSScreen) -> Void)?
+    private let onRequestFocusReturn: (() -> Void)?
     private var activeTool: EditTool = .none
     private var beautifySubToolbarView: BeautifySubToolbar?
     private var isBeautifyActive: Bool = false
@@ -96,6 +97,7 @@ class EditWindowController {
         windowBaseImage: NSImage? = nil,
         isWindowCapture: Bool = false,
         onRecordingSelection: ((NSRect, NSScreen) -> Void)? = nil,
+        onRequestFocusReturn: (() -> Void)? = nil,
         onComplete: @escaping (NSImage?) -> Void
     ) {
         self.captureRect = captureRect
@@ -108,6 +110,7 @@ class EditWindowController {
         self.windowBaseImage = windowBaseImage
         self.isWindowCapture = isWindowCapture
         self.onRecordingSelection = onRecordingSelection
+        self.onRequestFocusReturn = onRequestFocusReturn
         self.onComplete = onComplete
         self.pickedColorSwatch = Self.color(fromHex: Defaults.lastPickedColorHex)
     }
@@ -115,6 +118,7 @@ class EditWindowController {
     func show() {
         guard let hostSelectionView else {
             onComplete(nil)
+            requestFocusReturn()
             return
         }
 
@@ -1076,6 +1080,7 @@ class EditWindowController {
                 try? pngData.write(to: url)
             }
         }
+        requestFocusReturn()
     }
 
     private func defaultImageSaveFilename(date: Date = Date()) -> String {
@@ -1144,6 +1149,7 @@ class EditWindowController {
     private func close() {
         tearDown()
         onComplete(nil)
+        requestFocusReturn()
     }
 
     private func toolUsesPickedColorSwatch(_ tool: EditTool) -> Bool {
@@ -1248,6 +1254,11 @@ class EditWindowController {
         return canvasView?.handleAnnotationClipboardShortcutFromKeyboard(for: event) ?? false
     }
 
+    func nudgeSelectedAnnotationFromKeyboard(for event: NSEvent) -> Bool {
+        guard !isScrollCapturing, !isCropping else { return false }
+        return canvasView?.nudgeSelectedAnnotationFromKeyboard(for: event) ?? false
+    }
+
     func deleteSelectedAnnotationFromKeyboard(for event: NSEvent) -> Bool {
         guard !isScrollCapturing, !isCropping else { return false }
         return canvasView?.deleteSelectedAnnotationFromKeyboard(for: event) ?? false
@@ -1284,10 +1295,16 @@ class EditWindowController {
         guard let finalImage = currentCompositeImage() else {
             tearDown()
             onComplete(nil)
+            requestFocusReturn()
             return
         }
         tearDown()
         onComplete(finalImage)
+        requestFocusReturn()
+    }
+
+    private func requestFocusReturn() {
+        onRequestFocusReturn?()
     }
 
     func tearDown() {

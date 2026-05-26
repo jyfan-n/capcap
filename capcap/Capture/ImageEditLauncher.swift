@@ -8,6 +8,7 @@ enum ImageEditLauncher {
     /// reading directly from the user's library.
     static func launch(
         sourceURL: URL,
+        onRequestFocusReturn: (() -> Void)? = nil,
         onComplete: @escaping (NSImage?) -> Void
     ) -> OverlayWindowController? {
         guard let copyURL = copyToTemp(sourceURL),
@@ -18,6 +19,7 @@ enum ImageEditLauncher {
         return present(
             original,
             source: .finder,
+            onRequestFocusReturn: onRequestFocusReturn,
             onComplete: onComplete
         )
     }
@@ -27,12 +29,14 @@ enum ImageEditLauncher {
     /// normal screenshot flow.
     static func launch(
         clipboardImage image: NSImage,
+        onRequestFocusReturn: (() -> Void)? = nil,
         onComplete: @escaping (NSImage?) -> Void
     ) -> OverlayWindowController? {
         guard image.size.width > 0, image.size.height > 0 else { return nil }
         return present(
             image,
             source: .clipboard,
+            onRequestFocusReturn: onRequestFocusReturn,
             onComplete: onComplete
         )
     }
@@ -40,6 +44,7 @@ enum ImageEditLauncher {
     private static func present(
         _ image: NSImage,
         source: OverlayWindowController.PresetSource,
+        onRequestFocusReturn: (() -> Void)?,
         onComplete: @escaping (NSImage?) -> Void
     ) -> OverlayWindowController? {
         let screen = activeScreen()
@@ -48,6 +53,7 @@ enum ImageEditLauncher {
         let controller = OverlayWindowController(
             presetImage: displayImage,
             presetSource: source,
+            onRequestFocusReturn: onRequestFocusReturn,
             onComplete: onComplete
         )
         controller.activate()

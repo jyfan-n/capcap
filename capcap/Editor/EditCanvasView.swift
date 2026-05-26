@@ -405,6 +405,22 @@ class EditCanvasView: NSView {
         return deleteSelectedAnnotation()
     }
 
+    func nudgeSelectedAnnotationFromKeyboard(for event: NSEvent) -> Bool {
+        guard
+            activeTextField == nil,
+            let delta = EditCanvasView.selectionNudgeDelta(for: event),
+            let idx = selectedIndex,
+            idx < annotations.count
+        else {
+            return false
+        }
+        recordUndo()
+        annotations[idx] = annotations[idx].translated(by: delta)
+        needsDisplay = true
+        refreshCursorAtCurrentLocation()
+        return true
+    }
+
     func undoFromKeyboard(for event: NSEvent) -> Bool {
         guard EditCanvasView.isUndoKey(event) else { return false }
         return undo()
@@ -2444,6 +2460,9 @@ class EditCanvasView: NSView {
         if handleAnnotationClipboardShortcutFromKeyboard(for: event) {
             return
         }
+        if nudgeSelectedAnnotationFromKeyboard(for: event) {
+            return
+        }
         if deleteSelectedAnnotationFromKeyboard(for: event) {
             return
         }
@@ -2466,6 +2485,21 @@ class EditCanvasView: NSView {
         let modifiers = event.modifierFlags.intersection(.deviceIndependentFlagsMask)
         guard modifiers.intersection(blockedModifiers).isEmpty else { return false }
         return event.keyCode == 51 || event.keyCode == 117
+    }
+
+    private static func selectionNudgeDelta(for event: NSEvent) -> NSPoint? {
+        let blockedModifiers: NSEvent.ModifierFlags = [.command, .control, .option]
+        let modifiers = event.modifierFlags.intersection(.deviceIndependentFlagsMask)
+        guard modifiers.intersection(blockedModifiers).isEmpty else { return nil }
+
+        let step: CGFloat = 1
+        switch event.keyCode {
+        case 123: return NSPoint(x: -step, y: 0) // Left Arrow
+        case 124: return NSPoint(x: step, y: 0)  // Right Arrow
+        case 125: return NSPoint(x: 0, y: -step) // Down Arrow
+        case 126: return NSPoint(x: 0, y: step)  // Up Arrow
+        default: return nil
+        }
     }
 }
 
