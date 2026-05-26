@@ -612,9 +612,6 @@ struct ArrowAnnotation: Annotation {
 
     func draw(in context: CGContext, bounds: NSRect) {
         context.setFillColor(color.cgColor)
-        context.setStrokeColor(color.cgColor)
-        context.setLineJoin(.round)
-        context.setLineCap(.round)
 
         // Tangent at the endpoint — drives the arrowhead orientation.
         let endTangent: (dx: CGFloat, dy: CGFloat)
