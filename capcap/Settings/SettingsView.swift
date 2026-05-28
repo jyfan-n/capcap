@@ -63,9 +63,9 @@ class SettingsView: NSView {
 
     // Picker & slider
     private var langPicker: NSPopUpButton!
-    private var historyCacheSlider: NSSlider!
+    private var historyCacheSlider: SettingsTickSlider!
     private var historyCacheValueLabel: NSTextField!
-    private var countdownSlider: NSSlider!
+    private var countdownSlider: SettingsTickSlider!
     private var countdownValueLabel: NSTextField!
     private var countdownTitleLabel: NSTextField!
     private var countdownHintLabel: NSTextField!
@@ -826,16 +826,15 @@ class SettingsView: NSView {
         historyInner.addArrangedSubview(historyHeader)
         historyHeader.widthAnchor.constraint(equalTo: historyInner.widthAnchor).isActive = true
 
-        let slider = NSSlider(
+        let slider = SettingsTickSlider(
             value: Double(Defaults.historyCacheLimit),
             minValue: Double(Defaults.historyCacheMin),
             maxValue: Double(Defaults.historyCacheMax),
+            stepValue: Double(Defaults.historyCacheStep),
+            numberOfTickMarks: (Defaults.historyCacheMax - Defaults.historyCacheMin) / Defaults.historyCacheStep + 1,
             target: self,
             action: #selector(historyCacheSliderChanged(_:))
         )
-        slider.allowsTickMarkValuesOnly = true
-        slider.numberOfTickMarks = (Defaults.historyCacheMax - Defaults.historyCacheMin) / Defaults.historyCacheStep + 1
-        slider.controlSize = .small
         slider.translatesAutoresizingMaskIntoConstraints = false
         historyCacheSlider = slider
         historyInner.addArrangedSubview(slider)
@@ -876,16 +875,15 @@ class SettingsView: NSView {
         countdownInner.addArrangedSubview(countdownHeader)
         countdownHeader.widthAnchor.constraint(equalTo: countdownInner.widthAnchor).isActive = true
 
-        let cdSlider = NSSlider(
+        let cdSlider = SettingsTickSlider(
             value: Double(Defaults.countdownSeconds),
             minValue: Double(Defaults.countdownSecondsMin),
             maxValue: Double(Defaults.countdownSecondsMax),
+            stepValue: 1,
+            numberOfTickMarks: Defaults.countdownSecondsMax - Defaults.countdownSecondsMin + 1,
             target: self,
             action: #selector(countdownSliderChanged(_:))
         )
-        cdSlider.allowsTickMarkValuesOnly = true
-        cdSlider.numberOfTickMarks = Defaults.countdownSecondsMax - Defaults.countdownSecondsMin + 1
-        cdSlider.controlSize = .small
         cdSlider.translatesAutoresizingMaskIntoConstraints = false
         countdownSlider = cdSlider
         countdownInner.addArrangedSubview(cdSlider)
@@ -1955,7 +1953,7 @@ class SettingsView: NSView {
         Defaults.language = cases[index]
     }
 
-    @objc private func historyCacheSliderChanged(_ sender: NSSlider) {
+    @objc private func historyCacheSliderChanged(_ sender: SettingsTickSlider) {
         let value = Int(sender.doubleValue.rounded())
         Defaults.historyCacheLimit = value
         let normalizedValue = Defaults.historyCacheLimit
@@ -1963,7 +1961,7 @@ class SettingsView: NSView {
         historyCacheValueLabel?.stringValue = "\(normalizedValue)"
     }
 
-    @objc private func countdownSliderChanged(_ sender: NSSlider) {
+    @objc private func countdownSliderChanged(_ sender: SettingsTickSlider) {
         let value = Int(sender.doubleValue.rounded())
         Defaults.countdownSeconds = value
         countdownValueLabel?.stringValue = "\(Defaults.countdownSeconds)\(L10n.countdownSecondsSuffix)"
@@ -3403,6 +3401,235 @@ private final class ActionButton: NSControl {
             return true
         }
         return super.performKeyEquivalent(with: event)
+    }
+}
+
+// MARK: - Settings tick slider
+
+private final class SettingsTickSlider: NSControl {
+    var minValue: Double
+    var maxValue: Double
+    var stepValue: Double
+    var numberOfTickMarks: Int
+
+    override var doubleValue: Double {
+        get { value }
+        set { setValue(newValue, notify: false) }
+    }
+
+    override var isEnabled: Bool {
+        didSet { needsDisplay = true }
+    }
+
+    private var value: Double
+    private var isDragging = false {
+        didSet { needsDisplay = true }
+    }
+
+    private let knobSize = NSSize(width: 9, height: 18)
+    private let trackHeight: CGFloat = 3.5
+    private let tickDiameter: CGFloat = 2.5
+    private let tickGap: CGFloat = 5
+    private let accentColor = NSColor(
+        calibratedRed: 0x11 / 255.0,
+        green: 0x7D / 255.0,
+        blue: 0xFF / 255.0,
+        alpha: 1.0
+    )
+
+    init(
+        frame: NSRect = .zero,
+        value: Double,
+        minValue: Double,
+        maxValue: Double,
+        stepValue: Double,
+        numberOfTickMarks: Int,
+        target: AnyObject?,
+        action: Selector?
+    ) {
+        self.minValue = minValue
+        self.maxValue = maxValue
+        self.stepValue = stepValue
+        self.numberOfTickMarks = max(0, numberOfTickMarks)
+        self.value = Self.normalizedValue(
+            value,
+            minValue: minValue,
+            maxValue: maxValue,
+            stepValue: stepValue
+        )
+        super.init(frame: frame)
+        self.target = target
+        self.action = action
+        wantsLayer = true
+    }
+
+    required init?(coder: NSCoder) {
+        fatalError("init(coder:) has not been implemented")
+    }
+
+    override var intrinsicContentSize: NSSize {
+        NSSize(width: NSView.noIntrinsicMetric, height: 22)
+    }
+
+    override var acceptsFirstResponder: Bool { true }
+    override func acceptsFirstMouse(for event: NSEvent?) -> Bool { true }
+
+    override func draw(_ dirtyRect: NSRect) {
+        let enabledAlpha: CGFloat = isEnabled ? 1 : 0.35
+        let trackRect = NSRect(
+            x: 0,
+            y: floor(bounds.midY - trackHeight / 2),
+            width: bounds.width,
+            height: trackHeight
+        )
+        let travelRect = NSRect(
+            x: knobSize.width / 2,
+            y: trackRect.minY,
+            width: max(1, bounds.width - knobSize.width),
+            height: trackRect.height
+        )
+
+        let trackPath = NSBezierPath(
+            roundedRect: trackRect,
+            xRadius: trackHeight / 2,
+            yRadius: trackHeight / 2
+        )
+        NSColor.white.withAlphaComponent(0.15 * enabledAlpha).setFill()
+        trackPath.fill()
+
+        let knobCenterX = travelRect.minX + normalizedFraction * travelRect.width
+        let fillRect = NSRect(
+            x: trackRect.minX,
+            y: trackRect.minY,
+            width: max(0, knobCenterX - trackRect.minX),
+            height: trackRect.height
+        )
+        if fillRect.width > 0 {
+            let fillPath = NSBezierPath(
+                roundedRect: fillRect,
+                xRadius: trackHeight / 2,
+                yRadius: trackHeight / 2
+            )
+            accentColor.withAlphaComponent(enabledAlpha).setFill()
+            fillPath.fill()
+        }
+
+        drawKnob(centerX: knobCenterX, enabledAlpha: enabledAlpha)
+        drawTickMarks(in: travelRect, enabledAlpha: enabledAlpha)
+    }
+
+    override func mouseDown(with event: NSEvent) {
+        window?.makeFirstResponder(self)
+        isDragging = true
+        updateValue(with: event, notify: true)
+    }
+
+    override func mouseDragged(with event: NSEvent) {
+        updateValue(with: event, notify: true)
+    }
+
+    override func mouseUp(with event: NSEvent) {
+        updateValue(with: event, notify: true)
+        isDragging = false
+    }
+
+    override func keyDown(with event: NSEvent) {
+        let step = stepValue > 0 ? stepValue : (maxValue - minValue) / 10
+        switch Int(event.keyCode) {
+        case kVK_LeftArrow, kVK_DownArrow:
+            setValue(value - step, notify: true)
+        case kVK_RightArrow, kVK_UpArrow:
+            setValue(value + step, notify: true)
+        default:
+            super.keyDown(with: event)
+        }
+    }
+
+    private var normalizedFraction: CGFloat {
+        guard maxValue > minValue else { return 0 }
+        return CGFloat((value - minValue) / (maxValue - minValue))
+    }
+
+    private func drawTickMarks(in trackRect: NSRect, enabledAlpha: CGFloat) {
+        guard numberOfTickMarks > 1 else { return }
+        let dotY = trackRect.minY - tickGap - tickDiameter
+        for index in 0..<numberOfTickMarks {
+            let fraction = CGFloat(index) / CGFloat(numberOfTickMarks - 1)
+            let x = trackRect.minX + fraction * trackRect.width
+            let tickRect = NSRect(
+                x: x - tickDiameter / 2,
+                y: dotY,
+                width: tickDiameter,
+                height: tickDiameter
+            )
+            NSColor.white.withAlphaComponent(0.24 * enabledAlpha).setFill()
+            NSBezierPath(ovalIn: tickRect).fill()
+        }
+    }
+
+    private func drawKnob(centerX: CGFloat, enabledAlpha: CGFloat) {
+        let knobRect = NSRect(
+            x: centerX - knobSize.width / 2,
+            y: bounds.midY - knobSize.height / 2,
+            width: knobSize.width,
+            height: knobSize.height
+        )
+        let knobPath = NSBezierPath(
+            roundedRect: knobRect,
+            xRadius: knobSize.width / 2,
+            yRadius: knobSize.width / 2
+        )
+
+        NSGraphicsContext.saveGraphicsState()
+        let shadow = NSShadow()
+        shadow.shadowColor = NSColor.black.withAlphaComponent(0.18 * enabledAlpha)
+        shadow.shadowBlurRadius = 1.5
+        shadow.shadowOffset = NSSize(width: 0, height: -0.5)
+        shadow.set()
+        NSColor(white: isDragging ? 0.88 : 0.78, alpha: enabledAlpha).setFill()
+        knobPath.fill()
+        NSGraphicsContext.restoreGraphicsState()
+
+        NSColor.white.withAlphaComponent(0.18 * enabledAlpha).setStroke()
+        knobPath.lineWidth = 0.5
+        knobPath.stroke()
+    }
+
+    private func updateValue(with event: NSEvent, notify: Bool) {
+        guard bounds.width > knobSize.width else { return }
+        let location = convert(event.locationInWindow, from: nil)
+        let trackMinX = knobSize.width / 2
+        let trackWidth = max(1, bounds.width - knobSize.width)
+        let fraction = min(max((location.x - trackMinX) / trackWidth, 0), 1)
+        let newValue = minValue + Double(fraction) * (maxValue - minValue)
+        setValue(newValue, notify: notify)
+    }
+
+    private func setValue(_ newValue: Double, notify: Bool) {
+        let normalized = Self.normalizedValue(
+            newValue,
+            minValue: minValue,
+            maxValue: maxValue,
+            stepValue: stepValue
+        )
+        value = normalized
+        needsDisplay = true
+        if notify {
+            sendAction(action, to: target)
+        }
+    }
+
+    private static func normalizedValue(
+        _ rawValue: Double,
+        minValue: Double,
+        maxValue: Double,
+        stepValue: Double
+    ) -> Double {
+        let clamped = min(max(rawValue, minValue), maxValue)
+        guard stepValue > 0 else { return clamped }
+        let steps = ((clamped - minValue) / stepValue).rounded()
+        let snapped = minValue + steps * stepValue
+        return min(max(snapped, minValue), maxValue)
     }
 }
 
