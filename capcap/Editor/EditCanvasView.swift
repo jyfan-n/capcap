@@ -1516,25 +1516,37 @@ class EditCanvasView: NSView {
         if annotations.isEmpty {
             innerImage = baseImage
         } else if
-            let compositeRep = baseImage.bitmapImageRepPreservingBacking(),
+            let compositeRep = Self.makeCompositeBitmapRep(matching: baseImage),
             let graphicsContext = NSGraphicsContext(bitmapImageRep: compositeRep)
         {
-            // compositeRep is created from baseImage's CGImage, so it already
-            // contains the base image pixels. We only need to draw annotations
-            // on top — do NOT call baseImage.draw here or you'll double-composite.
             let imageBounds = NSRect(origin: .zero, size: baseImage.size)
+            let annotationBounds = NSRect(origin: .zero, size: bounds.size)
 
             NSGraphicsContext.saveGraphicsState()
             NSGraphicsContext.current = graphicsContext
             graphicsContext.imageInterpolation = .high
+            baseImage.draw(
+                in: imageBounds,
+                from: NSRect(origin: .zero, size: baseImage.size),
+                operation: .copy,
+                fraction: 1.0
+            )
 
             let context = graphicsContext.cgContext
             if let annotationClipMask {
                 _ = WindowEffects.clip(context, toAlphaOf: annotationClipMask, in: imageBounds)
             }
-            for annotation in annotations {
-                annotation.drawApplyingTransforms(in: context, bounds: imageBounds)
+            context.saveGState()
+            if annotationBounds.width > 0, annotationBounds.height > 0 {
+                let scaleX = imageBounds.width / annotationBounds.width
+                let scaleY = imageBounds.height / annotationBounds.height
+                context.scaleBy(x: scaleX, y: scaleY)
             }
+            for annotation in annotations {
+                annotation.drawApplyingTransforms(in: context, bounds: annotationBounds)
+            }
+            context.restoreGState()
+            graphicsContext.flushGraphics()
 
             NSGraphicsContext.restoreGraphicsState()
 
@@ -1560,6 +1572,24 @@ class EditCanvasView: NSView {
             return rendered
         }
         return innerImage
+    }
+
+    private static func makeCompositeBitmapRep(matching image: NSImage) -> NSBitmapImageRep? {
+        guard let cgImage = image.cgImagePreservingBacking() else { return nil }
+        let rep = NSBitmapImageRep(
+            bitmapDataPlanes: nil,
+            pixelsWide: cgImage.width,
+            pixelsHigh: cgImage.height,
+            bitsPerSample: 8,
+            samplesPerPixel: 4,
+            hasAlpha: true,
+            isPlanar: false,
+            colorSpaceName: .deviceRGB,
+            bytesPerRow: 0,
+            bitsPerPixel: 0
+        )
+        rep?.size = image.size
+        return rep
     }
 
     func loadPreviewImage(_ image: NSImage) {

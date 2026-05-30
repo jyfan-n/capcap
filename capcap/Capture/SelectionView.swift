@@ -56,6 +56,7 @@ class SelectionView: NSView {
 
     // When false, the selection frame becomes a fixed viewport.
     var selectionInteractionEnabled = true
+    var selectionSizeLabelOverride: String?
 
     // MARK: - Pre-captured Snapshot
 
@@ -479,6 +480,8 @@ class SelectionView: NSView {
             drawHandles(context: context, rect: rect)
             // Draw size label
             SelectionView.drawSizeLabel(context: context, rect: rect)
+        } else if state == .selected, let selectionSizeLabelOverride {
+            SelectionView.drawSizeLabel(context: context, rect: rect, text: selectionSizeLabelOverride)
         }
     }
 
@@ -496,8 +499,8 @@ class SelectionView: NSView {
         }
     }
 
-    static func drawSizeLabel(context: CGContext, rect: NSRect) {
-        let text = "\(Int(rect.width)) x \(Int(rect.height))"
+    static func drawSizeLabel(context: CGContext, rect: NSRect, text: String? = nil) {
+        let text = text ?? "\(Int(rect.width)) x \(Int(rect.height))"
         let attrs: [NSAttributedString.Key: Any] = [
             .foregroundColor: NSColor.white,
             .font: NSFont.monospacedDigitSystemFont(ofSize: 12, weight: .medium)

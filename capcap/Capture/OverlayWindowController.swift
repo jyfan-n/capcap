@@ -243,7 +243,7 @@ class OverlayWindowController {
         guard let window = windows.first(where: { $0.screen == screen }),
               let selectionView = window.contentView as? SelectionView else { return }
 
-        let imageSize = presetImage.size
+        let imageSize = Self.displaySize(for: presetImage.size, on: screen)
         let viewBounds = selectionView.bounds
         let centeredOrigin = NSPoint(
             x: (viewBounds.width - imageSize.width) / 2,
@@ -252,6 +252,10 @@ class OverlayWindowController {
         let viewRect = NSRect(origin: centeredOrigin, size: imageSize)
 
         selectionView.updateSelectionRect(viewRect)
+        selectionView.selectionSizeLabelOverride = Self.scaleLabelText(
+            imageSize: presetImage.size,
+            displaySize: imageSize
+        )
         // Lock immediately so user can't drag/resize a fixed-image canvas.
         selectionView.selectionLocked = true
         selectionView.selectionInteractionEnabled = false
@@ -276,6 +280,35 @@ class OverlayWindowController {
             message: hint,
             centerAnchor: NSPoint(x: anchorRect.midX, y: anchorRect.midY),
             duration: 3.0
+        )
+    }
+
+    private static func scaleLabelText(imageSize: NSSize, displaySize: NSSize) -> String? {
+        guard imageSize.width > 0, imageSize.height > 0,
+              displaySize.width > 0, displaySize.height > 0
+        else {
+            return nil
+        }
+        let ratio = min(displaySize.width / imageSize.width, displaySize.height / imageSize.height)
+        guard ratio < 0.999 else { return nil }
+        let width = Int(round(imageSize.width))
+        let height = Int(round(imageSize.height))
+        let percent = max(1, Int(round(ratio * 100)))
+        return "\(width)x\(height)(\(percent)%)"
+    }
+
+    private static func displaySize(for imageSize: NSSize, on screen: NSScreen) -> NSSize {
+        let frame = screen.visibleFrame
+        let horizontalMargin: CGFloat = 60
+        let verticalMargin: CGFloat = 120 // leave room for toolbar above/below
+        let maxWidth = max(200, frame.width - horizontalMargin * 2)
+        let maxHeight = max(200, frame.height - verticalMargin * 2)
+
+        guard imageSize.width > 0, imageSize.height > 0 else { return imageSize }
+        let ratio = min(1.0, maxWidth / imageSize.width, maxHeight / imageSize.height)
+        return NSSize(
+            width: max(1, floor(imageSize.width * ratio)),
+            height: max(1, floor(imageSize.height * ratio))
         )
     }
 

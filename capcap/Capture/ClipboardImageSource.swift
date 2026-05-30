@@ -18,7 +18,7 @@ enum ClipboardImageSource {
         // instead of the real image. Load from the file URL first.
         if imageFileURLs.count == 1,
            let data = try? Data(contentsOf: imageFileURLs[0]) {
-            return image(from: data)
+            return NSImage.imagePreservingPixelDimensions(from: data)
         }
 
         if !imageFileURLs.isEmpty {
@@ -30,7 +30,7 @@ enum ClipboardImageSource {
         // the image's true pixel resolution rather than DPI-scaled points.
         for type in bitmapPasteboardTypes {
             if let data = pasteboard.data(forType: type),
-               let image = image(from: data) {
+               let image = NSImage.imagePreservingPixelDimensions(from: data) {
                 return image
             }
         }
@@ -55,37 +55,6 @@ enum ClipboardImageSource {
             return []
         }
         return urls.filter(isImage)
-    }
-
-    /// Wraps a decoded bitmap in an NSImage sized to its pixel dimensions, so
-    /// the editor canvas bounds match the image's full resolution.
-    private static func image(from rep: NSBitmapImageRep) -> NSImage? {
-        let pixelSize = NSSize(width: rep.pixelsWide, height: rep.pixelsHigh)
-        guard pixelSize.width > 0, pixelSize.height > 0 else { return nil }
-        rep.size = pixelSize
-        let image = NSImage(size: pixelSize)
-        image.addRepresentation(rep)
-        return image
-    }
-
-    private static func image(from data: Data) -> NSImage? {
-        if let rep = NSBitmapImageRep(data: data) {
-            return image(from: rep)
-        }
-
-        guard let source = NSImage(data: data),
-              let cgImage = source.cgImagePreservingBacking()
-        else {
-            return nil
-        }
-
-        let pixelSize = NSSize(width: cgImage.width, height: cgImage.height)
-        guard pixelSize.width > 0, pixelSize.height > 0 else { return nil }
-        let rep = NSBitmapImageRep(cgImage: cgImage)
-        rep.size = pixelSize
-        let image = NSImage(size: pixelSize)
-        image.addRepresentation(rep)
-        return image
     }
 
     private static let bitmapPasteboardTypes: [NSPasteboard.PasteboardType] = [

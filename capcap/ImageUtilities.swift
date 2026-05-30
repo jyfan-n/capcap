@@ -3,6 +3,30 @@ import ImageIO
 import UniformTypeIdentifiers
 
 extension NSImage {
+    static func imagePreservingPixelDimensions(from data: Data) -> NSImage? {
+        if let rep = NSBitmapImageRep(data: data) {
+            return imagePreservingPixelDimensions(from: rep)
+        }
+
+        guard let source = NSImage(data: data),
+              let cgImage = source.cgImagePreservingBacking()
+        else {
+            return nil
+        }
+
+        let rep = NSBitmapImageRep(cgImage: cgImage)
+        return imagePreservingPixelDimensions(from: rep)
+    }
+
+    private static func imagePreservingPixelDimensions(from rep: NSBitmapImageRep) -> NSImage? {
+        let pixelSize = NSSize(width: rep.pixelsWide, height: rep.pixelsHigh)
+        guard pixelSize.width > 0, pixelSize.height > 0 else { return nil }
+        rep.size = pixelSize
+        let image = NSImage(size: pixelSize)
+        image.addRepresentation(rep)
+        return image
+    }
+
     private var highestResolutionBitmapRep: NSBitmapImageRep? {
         representations
             .compactMap { $0 as? NSBitmapImageRep }
