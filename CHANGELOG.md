@@ -7,6 +7,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.3.29] - 2026-06-03
+
+### Added
+- Add color picker shortcut support (c7e6748)
+
+### Changed
+- Move filename rules to General settings (47825c8)
+- Refine emoji subtoolbar recent-selection behavior (fbd55fc)
+- Add manual scroll option to long screenshot capture (53b9288)
+- Add edit button to pinned image toolbar (e36ff8f)
+- Make emoji Shift-resize square (db0f953)
+
 ## [1.3.28] - 2026-06-03
 
 ### Added
