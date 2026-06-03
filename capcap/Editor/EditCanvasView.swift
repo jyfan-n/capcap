@@ -2655,7 +2655,6 @@ class EditCanvasView: NSView {
         let originalHalfWidth = original.width / 2
         let originalHalfHeight = original.height / 2
         let originalCenter = NSPoint(x: original.midX, y: original.midY)
-        let minHalfSize = minimumSize / 2
         guard original.width > 0, original.height > 0 else { return original }
 
         let xSign: CGFloat? = anchor.movesMinX ? -1 : (anchor.movesMaxX ? 1 : nil)
@@ -2668,60 +2667,57 @@ class EditCanvasView: NSView {
         let fixedWorld = point(originalCenter, adding: rotatedVector(fixedLocal, by: rotation))
         let deltaLocal = unrotatedVector(delta(from: fixedWorld, to: currentMouse), by: rotation)
 
-        var halfWidth = originalHalfWidth
-        var halfHeight = originalHalfHeight
+        // Keep dimensions signed until the center is placed so handles can
+        // cross over the fixed edge; the returned NSRect stays normalized.
+        let proposedWidth = xSign.map { $0 * deltaLocal.x } ?? original.width
+        let proposedHeight = ySign.map { $0 * deltaLocal.y } ?? original.height
+        var signedWidth = proposedWidth
+        var signedHeight = proposedHeight
+
+        func direction(for value: CGFloat) -> CGFloat {
+            value < 0 ? -1 : 1
+        }
+
         if constraint == .preserveAspectRatio, xSign != nil || ySign != nil {
-            let proposedWidth = xSign.map { $0 * deltaLocal.x } ?? original.width
-            let proposedHeight = ySign.map { $0 * deltaLocal.y } ?? original.height
             let scale: CGFloat
             switch (xSign, ySign) {
             case (.some, .some):
                 let denominator = original.width * original.width + original.height * original.height
                 scale = denominator > 0
-                    ? (original.width * proposedWidth + original.height * proposedHeight) / denominator
+                    ? (original.width * abs(proposedWidth) + original.height * abs(proposedHeight)) / denominator
                     : 1
             case (.some, .none):
-                scale = proposedWidth / original.width
+                scale = abs(proposedWidth) / original.width
             case (.none, .some):
-                scale = proposedHeight / original.height
+                scale = abs(proposedHeight) / original.height
             case (.none, .none):
                 scale = 1
             }
-            guard scale.isFinite, scale > 0 else { return original }
-            halfWidth = originalHalfWidth * scale
-            halfHeight = originalHalfHeight * scale
-            guard halfWidth >= minHalfSize, halfHeight >= minHalfSize else { return original }
+            guard scale.isFinite else { return original }
+            signedWidth = (xSign == nil ? 1 : direction(for: proposedWidth)) * original.width * scale
+            signedHeight = (ySign == nil ? 1 : direction(for: proposedHeight)) * original.height * scale
         } else if constraint == .square, xSign != nil || ySign != nil {
-            let proposedWidth = xSign.map { $0 * deltaLocal.x } ?? original.width
-            let proposedHeight = ySign.map { $0 * deltaLocal.y } ?? original.height
             let side: CGFloat
             switch (xSign, ySign) {
             case (.some, .some):
-                side = max(proposedWidth, proposedHeight)
+                side = max(abs(proposedWidth), abs(proposedHeight))
             case (.some, .none):
-                side = proposedWidth
+                side = abs(proposedWidth)
             case (.none, .some):
-                side = proposedHeight
+                side = abs(proposedHeight)
             case (.none, .none):
                 side = min(original.width, original.height)
             }
-            guard side.isFinite, side >= minimumSize else { return original }
-            halfWidth = side / 2
-            halfHeight = side / 2
-        } else {
-            if let xSign {
-                halfWidth = xSign * deltaLocal.x / 2
-                guard halfWidth >= minHalfSize else { return original }
-            }
-            if let ySign {
-                halfHeight = ySign * deltaLocal.y / 2
-                guard halfHeight >= minHalfSize else { return original }
-            }
+            guard side.isFinite else { return original }
+            signedWidth = (xSign == nil ? 1 : direction(for: proposedWidth)) * side
+            signedHeight = (ySign == nil ? 1 : direction(for: proposedHeight)) * side
         }
 
+        let halfWidth = abs(signedWidth) / 2
+        let halfHeight = abs(signedHeight) / 2
         let centerLocal = NSPoint(
-            x: xSign.map { $0 * halfWidth } ?? 0,
-            y: ySign.map { $0 * halfHeight } ?? 0
+            x: xSign.map { $0 * signedWidth / 2 } ?? 0,
+            y: ySign.map { $0 * signedHeight / 2 } ?? 0
         )
         let center = point(fixedWorld, adding: rotatedVector(centerLocal, by: rotation))
         return NSRect(
