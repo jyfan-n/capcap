@@ -1094,6 +1094,59 @@ struct Defaults {
         }
     }
 
+    static let editorLineWidthMin: Double = 1
+    static let editorLineWidthMax: Double = 24
+
+    static var lastEditorColorHex: String? {
+        get {
+            normalizedHexColor(defaults.string(forKey: "lastEditorColorHex"))
+        }
+        set {
+            if let normalized = normalizedHexColor(newValue) {
+                defaults.set(normalized, forKey: "lastEditorColorHex")
+            } else {
+                defaults.removeObject(forKey: "lastEditorColorHex")
+            }
+        }
+    }
+
+    static var lastEditorLineWidth: Double {
+        get {
+            if defaults.object(forKey: "lastEditorLineWidth") == nil {
+                return 4.0
+            }
+            return clampedEditorLineWidth(defaults.double(forKey: "lastEditorLineWidth"))
+        }
+        set {
+            defaults.set(clampedEditorLineWidth(newValue), forKey: "lastEditorLineWidth")
+        }
+    }
+
+    static var lastMarkerColorHex: String? {
+        get {
+            normalizedHexColor(defaults.string(forKey: "lastMarkerColorHex"))
+        }
+        set {
+            if let normalized = normalizedHexColor(newValue) {
+                defaults.set(normalized, forKey: "lastMarkerColorHex")
+            } else {
+                defaults.removeObject(forKey: "lastMarkerColorHex")
+            }
+        }
+    }
+
+    static var lastMarkerLineWidth: Double {
+        get {
+            if defaults.object(forKey: "lastMarkerLineWidth") == nil {
+                return 5.0
+            }
+            return clampedEditorLineWidth(defaults.double(forKey: "lastMarkerLineWidth"))
+        }
+        set {
+            defaults.set(clampedEditorLineWidth(newValue), forKey: "lastMarkerLineWidth")
+        }
+    }
+
     static var mosaicBlockSize: Double {
         get {
             let val = defaults.double(forKey: "mosaicBlockSize")
@@ -1195,6 +1248,10 @@ struct Defaults {
         if trimmed.hasPrefix("#") { trimmed.removeFirst() }
         guard trimmed.count == 6, UInt32(trimmed, radix: 16) != nil else { return nil }
         return "#\(trimmed)"
+    }
+
+    private static func clampedEditorLineWidth(_ width: Double) -> Double {
+        min(max(width, editorLineWidthMin), editorLineWidthMax)
     }
 
     static var lastBeautifyPresetID: String? {

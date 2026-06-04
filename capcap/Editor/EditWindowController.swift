@@ -454,8 +454,7 @@ class EditWindowController {
                 dynamicColor: pickedColorSwatch,
                 currentSize: currentLineWidth,
                 onSize: { [weak self] size in
-                    self?.currentLineWidth = size
-                    self?.canvasView?.currentLineWidth = size
+                    self?.setCurrentDrawingLineWidth(size)
                 }
             )
         case .arrow:
@@ -470,8 +469,7 @@ class EditWindowController {
                     showsArrowStyles: true
                 ),
                 onSize: { [weak self] size in
-                    self?.currentLineWidth = size
-                    self?.canvasView?.currentLineWidth = size
+                    self?.setCurrentDrawingLineWidth(size)
                 },
                 arrowStyle: currentArrowStyle,
                 onArrowStyle: { [weak self] style in
@@ -489,8 +487,7 @@ class EditWindowController {
                     showsFillCheckbox: true
                 ),
                 onSize: { [weak self] size in
-                    self?.currentLineWidth = size
-                    self?.canvasView?.currentLineWidth = size
+                    self?.setCurrentDrawingLineWidth(size)
                 },
                 fillEnabled: currentShapeFill,
                 onFill: { [weak self] enabled in
@@ -504,12 +501,10 @@ class EditWindowController {
                 dynamicColor: pickedColorSwatch,
                 currentSize: currentMarkerLineWidth,
                 onColor: { [weak self] color in
-                    self?.currentMarkerColor = color
-                    self?.canvasView?.currentMarkerColor = color
+                    self?.setCurrentMarkerColor(color)
                 },
                 onSize: { [weak self] size in
-                    self?.currentMarkerLineWidth = size
-                    self?.canvasView?.currentMarkerLineWidth = size
+                    self?.setCurrentMarkerLineWidth(size)
                 }
             )
         case .text:
@@ -570,8 +565,7 @@ class EditWindowController {
             if let onColor {
                 onColor(color)
             } else {
-                self?.currentColor = color
-                self?.canvasView?.currentColor = color
+                self?.setCurrentDrawingColor(color)
             }
             // Push the same color onto whatever annotation is currently
             // selected. With no selection this is a no-op, so the call is
@@ -608,8 +602,7 @@ class EditWindowController {
             strokeEnabled: currentTextStroke
         )
         view.onColorChanged = { [weak self] color in
-            self?.currentColor = color
-            self?.canvasView?.currentColor = color
+            self?.setCurrentDrawingColor(color)
             self?.canvasView?.mutateSelectedAnnotationAtomic { $0.withColor(color) }
         }
         view.onStrokeChanged = { [weak self] enabled in
@@ -1463,6 +1456,34 @@ class EditWindowController {
         canvasView?.mutateSelectedAnnotationAtomic { $0.withFill(enabled) }
     }
 
+    private func setCurrentDrawingColor(_ color: NSColor) {
+        currentColor = color
+        canvasView?.currentColor = color
+        if let hex = Self.hex(from: color) {
+            Defaults.lastEditorColorHex = hex
+        }
+    }
+
+    private func setCurrentDrawingLineWidth(_ size: CGFloat) {
+        currentLineWidth = size
+        canvasView?.currentLineWidth = size
+        Defaults.lastEditorLineWidth = Double(size)
+    }
+
+    private func setCurrentMarkerColor(_ color: NSColor) {
+        currentMarkerColor = color
+        canvasView?.currentMarkerColor = color
+        if let hex = Self.hex(from: color) {
+            Defaults.lastMarkerColorHex = hex
+        }
+    }
+
+    private func setCurrentMarkerLineWidth(_ size: CGFloat) {
+        currentMarkerLineWidth = size
+        canvasView?.currentMarkerLineWidth = size
+        Defaults.lastMarkerLineWidth = Double(size)
+    }
+
     private func setArrowStyle(_ style: ArrowStyle) {
         currentArrowStyle = style
         canvasView?.currentArrowStyle = style
@@ -1483,6 +1504,16 @@ class EditWindowController {
         let g = CGFloat((value >> 8) & 0xFF) / 255.0
         let b = CGFloat(value & 0xFF) / 255.0
         return NSColor(srgbRed: r, green: g, blue: b, alpha: 1.0)
+    }
+
+    private static func hex(from color: NSColor) -> String? {
+        guard let rgb = color.usingColorSpace(.sRGB) ?? color.usingColorSpace(.deviceRGB) else {
+            return nil
+        }
+        let r = Int(round(max(0, min(1, rgb.redComponent)) * 255))
+        let g = Int(round(max(0, min(1, rgb.greenComponent)) * 255))
+        let b = Int(round(max(0, min(1, rgb.blueComponent)) * 255))
+        return String(format: "#%02X%02X%02X", r, g, b)
     }
 
     /// Trigger the system color sampler (loupe). The picked color's hex is
