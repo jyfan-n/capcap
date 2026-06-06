@@ -616,30 +616,22 @@ class SelectionView: NSView {
 
     static func setCursorForHandle(_ handle: HandlePosition) {
         switch handle {
-        case .topLeft, .bottomRight:
-            NSCursor(image: NSImage(size: NSSize(width: 16, height: 16), flipped: false) { rect in
-                NSColor.white.setStroke()
-                let path = NSBezierPath()
-                path.move(to: NSPoint(x: 2, y: 14))
-                path.line(to: NSPoint(x: 14, y: 2))
-                path.lineWidth = 2
-                path.stroke()
-                return true
-            }, hotSpot: NSPoint(x: 8, y: 8)).set()
-        case .topRight, .bottomLeft:
-            NSCursor(image: NSImage(size: NSSize(width: 16, height: 16), flipped: false) { rect in
-                NSColor.white.setStroke()
-                let path = NSBezierPath()
-                path.move(to: NSPoint(x: 2, y: 2))
-                path.line(to: NSPoint(x: 14, y: 14))
-                path.lineWidth = 2
-                path.stroke()
-                return true
-            }, hotSpot: NSPoint(x: 8, y: 8)).set()
-        case .topCenter, .bottomCenter:
-            NSCursor.resizeUpDown.set()
-        case .leftCenter, .rightCenter:
-            NSCursor.resizeLeftRight.set()
+        case .topLeft:
+            ResizeHandleCursor.setFrameResizeCursor(for: .topLeft)
+        case .topRight:
+            ResizeHandleCursor.setFrameResizeCursor(for: .topRight)
+        case .bottomLeft:
+            ResizeHandleCursor.setFrameResizeCursor(for: .bottomLeft)
+        case .bottomRight:
+            ResizeHandleCursor.setFrameResizeCursor(for: .bottomRight)
+        case .topCenter:
+            ResizeHandleCursor.setFrameResizeCursor(for: .top)
+        case .bottomCenter:
+            ResizeHandleCursor.setFrameResizeCursor(for: .bottom)
+        case .leftCenter:
+            ResizeHandleCursor.setFrameResizeCursor(for: .left)
+        case .rightCenter:
+            ResizeHandleCursor.setFrameResizeCursor(for: .right)
         }
     }
 

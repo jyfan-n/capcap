@@ -3297,9 +3297,14 @@ class EditCanvasView: NSView {
         if let kind = hitTestSelectionHandle(at: point) {
             if case .resize(let anchor) = kind {
                 switch anchor {
-                case .left, .right: NSCursor.resizeLeftRight.set()
-                case .top, .bottom: NSCursor.resizeUpDown.set()
-                default: NSCursor.openHand.set()
+                case .topLeft: ResizeHandleCursor.setFrameResizeCursor(for: .topLeft)
+                case .top: ResizeHandleCursor.setFrameResizeCursor(for: .top)
+                case .topRight: ResizeHandleCursor.setFrameResizeCursor(for: .topRight)
+                case .right: ResizeHandleCursor.setFrameResizeCursor(for: .right)
+                case .bottomRight: ResizeHandleCursor.setFrameResizeCursor(for: .bottomRight)
+                case .bottom: ResizeHandleCursor.setFrameResizeCursor(for: .bottom)
+                case .bottomLeft: ResizeHandleCursor.setFrameResizeCursor(for: .bottomLeft)
+                case .left: ResizeHandleCursor.setFrameResizeCursor(for: .left)
                 }
             } else {
                 NSCursor.openHand.set()
