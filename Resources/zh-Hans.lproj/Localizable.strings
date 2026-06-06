@@ -11,13 +11,13 @@
 "launchApp" = "启动应用";
 "launchAtLogin" = "开机自动启动";
 "demoMode" = "演示模式";
-"demoModeHint" = "录屏软件可以录到选区遮罩与编辑器（仅影响外部录制）";
+"demoModeHint" = "录屏软件可以录到选区遮罩与编辑器，仅影响外部录制";
 "historyCacheToggleLabel" = "缓存截图";
 "historyCacheToggleHint" = "保存最近截图、取色和上传结果，便于从菜单栏快速再次复制";
 "historyCacheLabel" = "历史缓存数量";
 "historyCacheHint" = "保留最近的截图数量，便于快速再次复制";
 "countdownLabel" = "倒计时秒数";
-"countdownHint" = "按住 ⌥ Option 后双击 ⌘ 或按截图快捷键，先弹出倒计时再截图（按 Esc 取消）";
+"countdownHint" = "按住 ⌥ Option 后双击 ⌘ 或按截图快捷键，先弹出倒计时再截图，按 Esc 取消";
 "countdownSecondsSuffix" = "秒";
 "windowShadowToggleLabel" = "窗口截图阴影";
 "windowShadowToggleHint" = "点选窗口截图时自动裁出圆角，并加上 macOS 风格的投影";
@@ -30,7 +30,7 @@
 "shortcutDefaultDisplay" = "双击 ⌘";
 "shortcutSet" = "录制";
 "shortcutCancel" = "取消";
-"shortcutWaiting" = "等待按键…";
+"shortcutWaiting" = "等待按键";
 "shortcutRestore" = "恢复默认";
 "selectedImagePinShortcutHeader" = "钉起选中的图片";
 "selectedImagePinShortcutDefaultDisplay" = "未设置";
@@ -46,10 +46,10 @@
 
 /* Image-edit shortcuts */
 "selectedImageEditShortcutHeader" = "编辑选中图片";
-"selectedImageEditShortcutHint" = "按下后直接编辑 Finder 中选中的单张图片。默认未设置。";
+"selectedImageEditShortcutHint" = "按下后直接编辑 Finder 中选中的单张图片。默认未设置";
 "selectedImageEditShortcutDefaultDisplay" = "未设置";
 "clipboardImageEditShortcutHeader" = "编辑剪贴板图片";
-"clipboardImageEditShortcutHint" = "按下后直接编辑当前剪贴板里的图片。默认未设置。";
+"clipboardImageEditShortcutHint" = "按下后直接编辑当前剪贴板里的图片。默认未设置";
 "clipboardImageEditShortcutDefaultDisplay" = "未设置";
 "textRecognitionShortcutHeader" = "文字识别";
 "textRecognitionShortcutDefaultDisplay" = "未设置";
@@ -66,42 +66,42 @@
 
 /* Copy-to-clipboard shortcut (editor confirm) */
 "clipboardShortcutHeader" = "复制到剪贴板";
-"clipboardShortcutHint" = "在编辑器内按下以确认编辑并把截图复制到剪贴板。未设置时默认双击 ⌘。";
+"clipboardShortcutHint" = "在编辑器内按下以确认编辑并把截图复制到剪贴板。未设置时默认双击 ⌘";
 "clipboardShortcutDefaultDisplay" = "双击 ⌘";
 
 /* Save-to-file shortcut (editor save) */
 "fileSaveShortcutHeader" = "保存到文件";
-"fileSaveShortcutHint" = "在编辑器内按下后，把截图保存为 PNG 到设置的截图保存路径。默认 ⌘S。";
+"fileSaveShortcutHint" = "在编辑器内按下后，把截图保存为 PNG 到设置的截图保存路径。默认 ⌘S";
 
 /* Shortcut conflict */
 "shortcutConflictTitle" = "快捷键已被占用";
-"shortcutConflictScreenshot" = "该按键组合已被截图快捷键占用，请换一个。";
-"shortcutConflictCountdown" = "该按键组合已被倒计时截图快捷键（截图快捷键 + ⌥）占用，请换一个。";
-"shortcutConflictSelectedImagePin" = "该按键组合已被钉起选中图片快捷键占用，请换一个。";
-"shortcutConflictClipboardImagePin" = "该按键组合已被钉起剪贴板图片快捷键占用，请换一个。";
-"shortcutConflictClipboard" = "该按键组合已被复制到剪贴板快捷键占用，请换一个。";
-"shortcutConflictFileSave" = "该按键组合已被保存到文件快捷键占用，请换一个。";
-"shortcutConflictSelectedImageEdit" = "该按键组合已被编辑选中图片快捷键占用，请换一个。";
-"shortcutConflictClipboardImageEdit" = "该按键组合已被编辑剪贴板图片快捷键占用，请换一个。";
-"shortcutConflictTextRecognition" = "该按键组合已被文字识别快捷键占用，请换一个。";
-"shortcutConflictCopyImageText" = "该按键组合已被复制图中文字快捷键占用，请换一个。";
-"shortcutConflictScreenshotTranslation" = "该按键组合已被截图翻译快捷键占用，请换一个。";
-"shortcutConflictRecord" = "该按键组合已被录制快捷键占用，请换一个。";
-"shortcutConflictFullScreenScreenshot" = "该按键组合已被截全屏快捷键占用，请换一个。";
-"shortcutConflictColorPicker" = "该按键组合已被取色器快捷键占用，请换一个。";
+"shortcutConflictScreenshot" = "该按键组合已被截图快捷键占用，请换一个";
+"shortcutConflictCountdown" = "该按键组合已被倒计时截图快捷键（截图快捷键 + ⌥）占用，请换一个";
+"shortcutConflictSelectedImagePin" = "该按键组合已被钉起选中图片快捷键占用，请换一个";
+"shortcutConflictClipboardImagePin" = "该按键组合已被钉起剪贴板图片快捷键占用，请换一个";
+"shortcutConflictClipboard" = "该按键组合已被复制到剪贴板快捷键占用，请换一个";
+"shortcutConflictFileSave" = "该按键组合已被保存到文件快捷键占用，请换一个";
+"shortcutConflictSelectedImageEdit" = "该按键组合已被编辑选中图片快捷键占用，请换一个";
+"shortcutConflictClipboardImageEdit" = "该按键组合已被编辑剪贴板图片快捷键占用，请换一个";
+"shortcutConflictTextRecognition" = "该按键组合已被文字识别快捷键占用，请换一个";
+"shortcutConflictCopyImageText" = "该按键组合已被复制图中文字快捷键占用，请换一个";
+"shortcutConflictScreenshotTranslation" = "该按键组合已被截图翻译快捷键占用，请换一个";
+"shortcutConflictRecord" = "该按键组合已被录制快捷键占用，请换一个";
+"shortcutConflictFullScreenScreenshot" = "该按键组合已被截全屏快捷键占用，请换一个";
+"shortcutConflictColorPicker" = "该按键组合已被取色器快捷键占用，请换一个";
 
 /* Menu bar */
 "takeScreenshot" = "截图";
 "takeFullScreenScreenshot" = "截全屏";
 "record" = "录制";
 "colorPicker" = "取色器";
-"settings" = "设置...";
+"settings" = "设置";
 "quitApp" = "退出 capcap";
 "historyMenu" = "历史";
 "historyEmpty" = "暂无历史";
 "historyClear" = "清除历史";
 "historyShowInFinder" = "在 Finder 中显示";
-"historyCloudMarkdownTip" = "按住 ⌘ 并点击预览图，可直接复制 Markdown 格式图片链接。";
+"historyCloudMarkdownTip" = "按住 ⌘ 并点击预览图，可直接复制 Markdown 格式图片链接";
 
 /* Cursor chip */
 "dragToScreenshot" = "点击窗口或拖动以截图";
@@ -126,16 +126,16 @@
 "clipboardImageEditNoImage" = "剪贴板里没有可编辑的图片";
 "recordingSaved" = "录制已保存到 %@";
 "recordingCancelled" = "录制已取消";
-"recordingExportingGIF" = "正在生成 GIF…";
+"recordingExportingGIF" = "正在生成 GIF";
 "recordingFailed" = "录制失败: %@";
 "saveRecording" = "保存录制";
 "saveRecordingPrompt" = "保存";
-"recordingFormatLabel" = "格式：";
+"recordingFormatLabel" = "格式";
 "recordingFormatManual" = "手动选择";
 "recordingFormatMP4" = "MP4";
 "recordingFormatGIF" = "GIF";
 "recordingFormatChoiceTitle" = "选择录制格式";
-"recordingFormatChoiceMessage" = "录制会保存到设置里的录制保存路径。";
+"recordingFormatChoiceMessage" = "录制会保存到设置里的录制保存路径";
 "screenshotSaved" = "截图已保存到 %@";
 "screenshotSaveFailed" = "截图保存失败: %@";
 "recordingStop" = "停止录制";
@@ -196,7 +196,7 @@
 "shapeStyleStandard" = "默认样式";
 "shapeStyleHandDrawn" = "手绘圆角";
 "insertImageFromClipboard" = "从剪贴板插入";
-"insertImageFromFile" = "从本地文件插入...";
+"insertImageFromFile" = "从本地文件插入";
 "insertImageChooseFile" = "选择图片";
 "insertImageNoClipboardImage" = "剪贴板中没有图片";
 "scrollCaptureAutoScroll" = "自动滚动";
@@ -221,7 +221,7 @@
 "toolbarSettingsSideHint" = "工具会在选区左侧或右侧显示";
 "toolbarSettingsHiddenTitle" = "隐藏的工具";
 "toolbarSettingsHiddenHint" = "拖到这里的工具不会出现在任何工具栏中";
-"toolbarSettingsFootnote" = "工具栏会根据选区位置自动切换为上下或左右布局。";
+"toolbarSettingsFootnote" = "工具栏会根据选区位置自动切换为上下或左右布局";
 "toolbarSettingsReset" = "重置为默认";
 "toolbarSettingsCancel" = "取消";
 "toolbarSettingsApply" = "应用";
@@ -242,11 +242,11 @@
 "aboutErrorLogReveal" = "在访达中显示";
 "aboutErrorLogRefresh" = "刷新日志";
 "aboutErrorLogClear" = "清除日志";
-"aboutErrorLogEmptyBody" = "capcap 暂未记录到错误日志。如果遇到卡死、强制退出或闪退，请回到这里复制日志反馈给开发者。";
+"aboutErrorLogEmptyBody" = "capcap 暂未记录到错误日志。如果遇到卡死、强制退出或闪退，请回到这里复制日志反馈给开发者";
 
 /* Updates — About pane */
 "checkForUpdates" = "检查更新";
-"updateChecking" = "正在检查…";
+"updateChecking" = "正在检查";
 "updateUpToDateStatus" = "已是最新版本";
 "updateNewVersionStatus" = "发现新版本 v%@";
 "updateFailedStatus" = "检查失败";
@@ -254,41 +254,41 @@
 "updateRetryButton" = "重试";
 "updateInstallNowButton" = "立即更新";
 "updateDownloadingStatus" = "下载中 %d%%";
-"updateInstallingStatus" = "正在安装…";
+"updateInstallingStatus" = "正在安装";
 "updateInstallFailedStatus" = "安装失败";
 
 /* Updates — menu bar */
-"checkForUpdatesMenu" = "检查更新…";
-"checkingForUpdatesMenu" = "正在检查更新…";
+"checkForUpdatesMenu" = "检查更新";
+"checkingForUpdatesMenu" = "正在检查更新";
 "updateAvailableMenu" = "有新版本 v%@";
 "updateDownloadingMenu" = "正在下载更新… %d%%";
-"updateInstallingMenu" = "正在安装更新…";
+"updateInstallingMenu" = "正在安装更新";
 "updateInstallFailedMenu" = "更新安装失败";
 
 /* Updates — progress HUD */
-"updateCheckingHUD" = "capcap 正在检查更新…";
+"updateCheckingHUD" = "capcap 正在检查更新";
 "updateDownloadingHUD" = "正在下载更新 %d%%";
-"updateVerifyingHUD" = "正在校验更新…";
-"updateUnzippingHUD" = "正在解压…";
-"updateInstallingHUD" = "正在安装…";
+"updateVerifyingHUD" = "正在校验更新";
+"updateUnzippingHUD" = "正在解压";
+"updateInstallingHUD" = "正在安装";
 
 /* Updates — manual check result alert */
 "updateAvailableTitle" = "发现新版本 v%@";
-"updateAvailableBody" = "capcap 将自动下载并安装最新版本，完成后会自动重启。";
+"updateAvailableBody" = "capcap 将自动下载并安装最新版本，完成后会自动重启";
 "updateUpToDateTitle" = "已是最新版本";
-"updateUpToDateBody" = "当前版本 v%@ 已是最新。";
+"updateUpToDateBody" = "当前版本 v%@ 已是最新";
 "updateFailedTitle" = "检查更新失败";
-"updateFailedBody" = "无法连接到 GitHub，请检查网络后重试。";
+"updateFailedBody" = "无法连接到 GitHub，请检查网络后重试";
 "updateInstallFailedTitle" = "更新安装失败";
-"updateInstallFailedBody" = "下载或安装更新时出错。你可以前往 GitHub 发布页面手动下载。";
+"updateInstallFailedBody" = "下载或安装更新时出错。你可以前往 GitHub 发布页面手动下载";
 "updateOpenPageButton" = "前往 GitHub";
 "updateSkipButton" = "跳过此版本";
 "updateLaterButton" = "稍后";
 "updateOKButton" = "好";
 
 /* Quit confirmation dialog */
-"quitConfirmTitle" = "退出 capcap?";
-"quitConfirmMessage" = "退出后菜单栏图标和截图快捷键将不再可用，需要重新启动 capcap。";
+"quitConfirmTitle" = "退出 capcap";
+"quitConfirmMessage" = "退出后菜单栏图标和截图快捷键将不再可用，需要重新启动 capcap";
 "quitConfirmAction" = "退出";
 "quitConfirmCancel" = "取消";
 
@@ -298,7 +298,7 @@
 "uploadCopied" = "已复制图床链接";
 "uploadCopiedMarkdown" = "已复制 Markdown 链接";
 "uploadNoProvider" = "请先在设置中配置图床";
-"uploadFailedPrefix" = "上传失败: ";
+"uploadFailedPrefix" = "上传失败";
 
 /* Upload — settings tab */
 "uploadDefaultProvider" = "默认图床";
@@ -309,36 +309,36 @@
 "uploadSavedToast" = "已保存配置";
 "uploadCurrentDefault" = "当前默认";
 "uploadMarkdownToggleTitle" = "复制为 Markdown 链接";
-"uploadMarkdownToggleSubtitle" = "开启后上传完成自动复制 Markdown 图片格式（![](链接)），关闭则复制普通 URL。在历史记录中，按住 ⌘ 点击已上传到图床的图片复制 Markdown 链接，直接点击则复制普通链接。";
+"uploadMarkdownToggleSubtitle" = "开启后上传完成自动复制 Markdown 图片格式（![](链接)），关闭则复制普通 URL。在历史记录中，按住 ⌘ 点击已上传到图床的图片复制 Markdown 链接，直接点击则复制普通链接";
 "filenameRuleTitle" = "文件名规则";
-"filenameRuleSubtitle" = "控制图片上传、图片保存默认名和录制保存默认名。扩展名会自动添加。";
-"filenameRulePresetLabel" = "预设：";
+"filenameRuleSubtitle" = "控制图片上传、图片保存默认名和录制保存默认名。扩展名会自动添加";
+"filenameRulePresetLabel" = "预设";
 "filenameRulePresetCustom" = "自定义";
 "filenameRulePresetShort" = "简短";
 "filenameRulePresetCompact" = "超短链接";
 "filenameRulePresetUnique" = "防重名";
 "filenameRulePresetCounter" = "每日计数";
 "filenameRulePresetRestore" = "恢复默认";
-"filenameRuleImageLabel" = "图片：";
-"filenameRuleRecordingLabel" = "录制：";
-"filenameRuleVariablesLabel" = "变量：";
+"filenameRuleImageLabel" = "图片";
+"filenameRuleRecordingLabel" = "录制";
+"filenameRuleVariablesLabel" = "变量";
 "filenameRuleVariableDate" = "日期";
 "filenameRuleVariableTime" = "时间";
 "filenameRuleVariableDaily" = "每日编号";
 "filenameRuleVariableRandom" = "随机码";
 "filenameRuleVariableSize" = "尺寸";
-"filenameRulePreview" = "预览：%@";
+"filenameRulePreview" = "%@";
 
 /* Upload — provider field labels */
 "uploadFieldBucket" = "存储桶";
 "uploadFieldBucketSpace" = "存储空间";
 "uploadFieldRegion" = "地域";
-"uploadFieldRegionOptional" = "区域(可选)";
-"uploadFieldPathOptional" = "路径(可选)";
-"uploadFieldCustomUrlOptional" = "自定义域名(可选)";
+"uploadFieldRegionOptional" = "可选区域";
+"uploadFieldPathOptional" = "可选路径";
+"uploadFieldCustomUrlOptional" = "可选自定义域名";
 "uploadFieldPublicDomain" = "外链域名";
 "uploadFieldEndpointArea" = "Endpoint 地域";
-"uploadFieldEndpointOptional" = "Endpoint(可选)";
+"uploadFieldEndpointOptional" = "可选 Endpoint";
 "uploadFieldAccountId" = "账户 ID";
 "uploadTestImageFailed" = "无法生成测试图片";
 
@@ -349,20 +349,20 @@
 
 /* Upload — errors */
 "uploadErrMissingConfig" = "未配置上传图床";
-"uploadErrInvalidConfigPrefix" = "配置无效: ";
-"uploadErrNetworkPrefix" = "网络错误: ";
-"uploadErrServerPrefix" = "上传失败 (%d): ";
-"uploadErrUnexpectedResponsePrefix" = "响应异常: ";
+"uploadErrInvalidConfigPrefix" = "配置无效";
+"uploadErrNetworkPrefix" = "网络错误";
+"uploadErrServerPrefix" = "上传失败 代码 %d";
+"uploadErrUnexpectedResponsePrefix" = "响应异常";
 "missingField" = "缺少 %@";
 
 /* Upload — test/validation pill */
 "uploadStatusUntested" = "未测试";
-"uploadStatusTesting" = "测试中…";
+"uploadStatusTesting" = "测试中";
 "uploadStatusValid" = "已生效";
 "uploadStatusInvalid" = "无效的配置";
 
 /* Upload — log lines */
-"uploadLogStartingTest" = "开始测试上传…";
+"uploadLogStartingTest" = "开始测试上传";
 "uploadLogConfigSaved" = "已保存配置";
 "uploadLogMissingFields" = "缺少必填字段: %@";
 "uploadLogTestSucceeded" = "测试上传成功: %@";
@@ -376,18 +376,18 @@
 
 /* OCR & Translation — result panel */
 "ocrTextHeader" = "识别文本";
-"ocrRecognizing" = "正在识别…";
+"ocrRecognizing" = "正在识别";
 "ocrNoText" = "未识别到文字";
 "ocrCopy" = "复制";
 "ocrCopied" = "已复制";
 "ocrRetry" = "重试";
-"ocrTranslating" = "翻译中…";
-"ocrTranslateFailedPrefix" = "翻译失败: ";
+"ocrTranslating" = "翻译中";
+"ocrTranslateFailedPrefix" = "翻译失败";
 "ocrNoProviderTitle" = "未配置翻译服务";
 "ocrNoProviderHint" = "前往「设置 → 翻译」添加 AI 服务";
 "ocrOpenSettings" = "打开设置";
 "ocrLineCopied" = "已复制该行";
-"copyImageTextCopying" = "正在复制…";
+"copyImageTextCopying" = "正在复制";
 "copyImageTextCopied" = "已复制图中文字";
 "copyImageTextNoText" = "未识别到文字";
 "screenshotTranslationHeader" = "翻译结果";
@@ -399,27 +399,27 @@
 "dictionaryExampleLabel" = "例句";
 "dictionaryDifficultyLabel" = "难度";
 "dictionaryNoProviderTitle" = "未配置支持词典模式的 AI 服务";
-"dictionaryNoProviderHint" = "请启用 OpenAI、DeepSeek、Claude 或自定义 OpenAI 兼容服务。";
+"dictionaryNoProviderHint" = "请启用 OpenAI、DeepSeek、Claude 或自定义 OpenAI 兼容服务";
 
 /* Translation — settings tab */
 "translationDictionaryModeTitle" = "词典模式";
-"translationDictionaryModeSubtitle" = "开启后，截图翻译识别出单个英文单词时，显示词条、音标、释义、例句和难度。";
+"translationDictionaryModeSubtitle" = "开启后，截图翻译识别出单个英文单词时，显示词条、音标、释义、例句和难度";
 "translationTargetLanguage" = "目标语言";
-"translationTargetHint" = "识别文本将翻译成该语言；若原文已是该语言则译为英文。";
+"translationTargetHint" = "识别文本将翻译成该语言；若原文已是该语言则译为英文";
 "translationProvidersHeader" = "AI 翻译服务";
 "translationApiKey" = "API Key";
-"translationApiKeyOptional" = "API Key(可选)";
+"translationApiKeyOptional" = "可选 API Key";
 "translationModel" = "模型";
 "translationEndpoint" = "接口地址";
-"translationEndpointOptional" = "接口地址(可选)";
+"translationEndpointOptional" = "可选接口地址";
 "translationSave" = "保存";
 "translationClear" = "清空";
 "translationConfigSaved" = "已保存配置";
-"translationTesting" = "测试中…";
+"translationTesting" = "测试中";
 "translationTestPassed" = "测试通过";
 "translationTestFailed" = "测试失败";
 "translationTestFailedTitle" = "已保存，但连接测试失败";
-"translationProviderCustom" = "自定义 (OpenAI 兼容)";
+"translationProviderCustom" = "自定义 OpenAI 兼容";
 "translationMoveUp" = "上移";
 "translationMoveDown" = "下移";
 
@@ -437,7 +437,7 @@
 /* Image Merge */
 "imageMergeShortcutHeader" = "合并图片";
 "imageMergeShortcutDefaultDisplay" = "未设置";
-"shortcutConflictImageMerge" = "该按键组合已被合并图片快捷键占用，请换一个。";
+"shortcutConflictImageMerge" = "该按键组合已被合并图片快捷键占用，请换一个";
 "mergeImages" = "合并图片";
 "mergeEditExitHint" = "正在编辑合并图片，按 X 退出编辑";
 "imageMergeNeedTwoImages" = "请选择至少两张 Finder 图片再合并";
@@ -473,13 +473,13 @@
 
 /* Save paths */
 "savePathTitle" = "保存路径";
-"savePathSubtitle" = "截图和录制会直接保存到这些路径，不再询问保存位置。";
+"savePathSubtitle" = "截图和录制会直接保存到这些路径，不再询问保存位置";
 "autoRevealSavedFilesLabel" = "在 Finder 中显示";
-"autoRevealSavedFilesHint" = "保存成功后，在 Finder 中选中刚保存的截图或录制。";
+"autoRevealSavedFilesHint" = "保存成功后，在 Finder 中选中刚保存的截图或录制";
 "recordingSavePathLabel" = "录制保存路径";
 "recordingSaveFormatSettingLabel" = "录制格式";
 "screenshotSavePathLabel" = "截图保存路径";
-"savePathChoose" = "选择...";
+"savePathChoose" = "选择";
 "savePathReveal" = "显示";
 "chooseRecordingSavePathTitle" = "选择录制保存路径";
 "chooseScreenshotSavePathTitle" = "选择截图保存路径";

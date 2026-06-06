@@ -1434,7 +1434,7 @@ class EditWindowController {
                 throw NSError(
                     domain: "capcap.screenshotSave",
                     code: 1,
-                    userInfo: [NSLocalizedDescriptionKey: "Could not encode PNG data."]
+                    userInfo: [NSLocalizedDescriptionKey: "Could not encode PNG data"]
                 )
             }
             let filename = FilenameTemplate.imageFileName(for: finalImage)

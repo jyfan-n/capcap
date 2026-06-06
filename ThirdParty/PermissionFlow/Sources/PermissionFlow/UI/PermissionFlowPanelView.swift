@@ -62,11 +62,11 @@ struct PermissionFlowPanelView: View {
     }
 
     /// Builds a markdown-backed localized title such as:
-    /// "Drag **Example** to the list above to allow **Accessibility**."
+    /// "Drag **Example** to the list above to allow **Accessibility**"
     private var headerTitle: AttributedString {
         let localizedTemplate = PermissionFlowLocalizer.string(
             "permission_flow.panel.title",
-            defaultValue: "Drag **%@** to the list above to allow **%@**.",
+            defaultValue: "Drag **%@** to the list above to allow **%@**",
             localeIdentifier: controller.localeIdentifier
         )
 

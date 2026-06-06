@@ -288,7 +288,7 @@ private final class TranslationProviderCard: NSView {
 
         body.addArrangedSubview(makeFieldRow(apiKeyLabel, apiKeyField,
                                              label: apiKeyLabelText(),
-                                             placeholder: "sk-…", width: body))
+                                             placeholder: "API key", width: body))
         if !kind.isDirectTranslationAPI {
             body.addArrangedSubview(makeFieldRow(modelLabel, modelField,
                                                  label: L10n.translationModel,

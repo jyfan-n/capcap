@@ -1,4 +1,4 @@
-"permission_flow.panel.title" = "Kéo **%@** vào danh sách bên trên để cho phép **%@**.";
+"permission_flow.panel.title" = "Kéo **%@** vào danh sách bên trên để cho phép **%@**";
 "permission_flow.app.this_app" = "Ứng dụng này";
 "permission_flow.pane.permission" = "Quyền";
 "permission_flow.pane.app_management" = "Quản lý ứng dụng";
@@ -9,9 +9,9 @@
 "permission_flow.pane.input_monitoring" = "Giám sát nhập liệu";
 "permission_flow.pane.media_apple_music" = "Phương tiện & Apple Music";
 "permission_flow.pane.screen_recording" = "Ghi màn hình";
-"permission_flow.drag.description" = "Kéo ứng dụng này vào danh sách cấp quyền trong Cài đặt hệ thống.";
+"permission_flow.drag.description" = "Kéo ứng dụng này vào danh sách cấp quyền trong Cài đặt hệ thống";
 "permission_flow.drag.label" = "Kéo";
 "permission_flow.button.grant" = "Cấp quyền";
 "permission_flow.button.granted" = "Đã cấp";
 "permission_flow.button.open" = "Mở";
-"permission_flow.button.checking" = "Đang kiểm tra...";
+"permission_flow.button.checking" = "Đang kiểm tra";

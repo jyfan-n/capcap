@@ -35,6 +35,10 @@ This script builds the app bundle, kills any running instance, launches the new 
 - No SwiftUI — this project uses AppKit exclusively with programmatic UI.
 - No storyboards or XIBs.
 - Minimum deployment target: macOS 14.0.
+- All newly added user-facing copy must not end with punctuation. Punctuation
+  inside the sentence is fine, but the final character of every visible string,
+  tooltip, alert, toast, menu item, placeholder, and localized value must not be
+  punctuation.
 
 ## Packaging Lessons
 

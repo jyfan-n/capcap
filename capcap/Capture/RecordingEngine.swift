@@ -392,10 +392,10 @@ final class RecordingEngine: NSObject {
 
         var errorDescription: String? {
             switch self {
-            case .invalidSelection: return "The selected recording area is empty."
-            case .noDisplay: return "Could not find the selected display."
-            case .noFrames: return "No video frames were recorded."
-            case .writerSetupFailed: return "Could not prepare the recording writer."
+            case .invalidSelection: return "The selected recording area is empty"
+            case .noDisplay: return "Could not find the selected display"
+            case .noFrames: return "No video frames were recorded"
+            case .writerSetupFailed: return "Could not prepare the recording writer"
             }
         }
     }

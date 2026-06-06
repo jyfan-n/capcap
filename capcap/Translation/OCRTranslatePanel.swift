@@ -891,7 +891,7 @@ private final class TranslationResultView: NSView {
     }
 
     func markFailure(_ error: Error) {
-        statusLabel.stringValue = L10n.ocrTranslateFailedPrefix + error.localizedDescription
+        statusLabel.stringValue = "\(L10n.ocrTranslateFailedPrefix) \(error.localizedDescription)"
         statusLabel.textColor = NSColor.systemOrange
         statusLabel.isHidden = false
         retryButton.isHidden = false
@@ -1009,7 +1009,7 @@ private final class DictionaryResultView: NSView {
     }
 
     func markFailure(_ error: Error) {
-        errorLabel.stringValue = L10n.ocrTranslateFailedPrefix + error.localizedDescription
+        errorLabel.stringValue = "\(L10n.ocrTranslateFailedPrefix) \(error.localizedDescription)"
         errorRow.isHidden = false
         fieldsStack.isHidden = true
         onLayoutChange()
@@ -1139,8 +1139,6 @@ final class OCRTranslatePanel: NSPanel {
     private var dictionaryRunID = UUID()
     private var currentDictionaryWord: String?
     private var currentDictionaryProvider: TranslationProviderKind?
-    private var dictionaryTitleTimer: Timer?
-    private var dictionaryTitleStep = 0
     private var recognizedLines: [RecognizedTextLine] = []
     private var recognizedText = ""
     private var ocrReady = false
@@ -1639,7 +1637,7 @@ final class OCRTranslatePanel: NSPanel {
     private func startDictionary(kind: TranslationProviderKind, word: String, target: TranslationLanguage) {
         dictionaryTask?.cancel()
         dictionaryResultView?.reset()
-        startDictionaryTitleAnimation(word: word)
+        setDictionaryLoadingTitle(word: word)
 
         let config = TranslationConfigStore.load(kind)
         let runID = UUID()
@@ -1653,14 +1651,14 @@ final class OCRTranslatePanel: NSPanel {
                     config: config
                 )
                 guard let self, self.dictionaryRunID == runID else { return }
-                self.stopDictionaryTitleAnimation(reset: true)
+                self.resetDictionaryTitle()
                 self.dictionaryResultView?.show(entry)
                 self.refreshHeight()
             } catch is CancellationError {
                 // Panel closed or lookup retried.
             } catch {
                 guard let self, self.dictionaryRunID == runID else { return }
-                self.stopDictionaryTitleAnimation(reset: true)
+                self.resetDictionaryTitle()
                 self.dictionaryResultView?.markFailure(error)
                 self.refreshHeight()
             }
@@ -1692,7 +1690,7 @@ final class OCRTranslatePanel: NSPanel {
         dictionaryTask?.cancel()
         dictionaryTask = nil
         dictionaryRunID = UUID()
-        stopDictionaryTitleAnimation(reset: true)
+        resetDictionaryTitle()
     }
 
     private func clearTranslationResults() {
@@ -1722,27 +1720,13 @@ final class OCRTranslatePanel: NSPanel {
         translationLanguageButton?.isHidden = true
     }
 
-    private func startDictionaryTitleAnimation(word: String) {
-        dictionaryTitleTimer?.invalidate()
+    private func setDictionaryLoadingTitle(word: String) {
         currentDictionaryWord = word
-        dictionaryTitleStep = 0
-        updateDictionaryTitleDots()
-        dictionaryTitleTimer = Timer.scheduledTimer(withTimeInterval: 0.35, repeats: true) { [weak self] _ in
-            self?.updateDictionaryTitleDots()
-        }
+        translationTitleLabel?.stringValue = word
     }
 
-    private func updateDictionaryTitleDots() {
-        guard let word = currentDictionaryWord else { return }
-        translationTitleLabel?.stringValue = word + String(repeating: ".", count: dictionaryTitleStep)
-        dictionaryTitleStep = (dictionaryTitleStep + 1) % 4
-    }
-
-    private func stopDictionaryTitleAnimation(reset: Bool) {
-        dictionaryTitleTimer?.invalidate()
-        dictionaryTitleTimer = nil
-        dictionaryTitleStep = 0
-        if reset, let word = currentDictionaryWord {
+    private func resetDictionaryTitle() {
+        if let word = currentDictionaryWord {
             translationTitleLabel?.stringValue = word
         }
     }

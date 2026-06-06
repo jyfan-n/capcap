@@ -5,9 +5,9 @@
 "showMenuBarIcon" = "메뉴 막대 아이콘 표시";
 "permissionsHeader" = "필요한 권한";
 "accessibilityPermission" = "손쉬운 사용";
-"accessibilityDescription" = "⌘ Command 키 두 번 누르기를 감지해 스크린샷을 실행하는 데 필요합니다.";
+"accessibilityDescription" = "⌘ Command 키 두 번 누르기를 감지해 스크린샷을 실행하는 데 필요합니다";
 "screenRecordingPermission" = "화면 기록";
-"screenRecordingDescription" = "스크린샷을 위해 화면 내용을 캡처하는 데 필요합니다.";
+"screenRecordingDescription" = "스크린샷을 위해 화면 내용을 캡처하는 데 필요합니다";
 "launchApp" = "앱 실행";
 "launchAtLogin" = "로그인 시 실행";
 "demoMode" = "데모 모드";
@@ -17,7 +17,7 @@
 "historyCacheLabel" = "기록 캐시 개수";
 "historyCacheHint" = "최근 스크린샷을 보관해 빠르게 다시 복사할 수 있습니다";
 "countdownLabel" = "카운트다운 초";
-"countdownHint" = "⌥ Option 을 누른 채 ⌘ 를 두 번 누르거나 스크린샷 단축키를 누르면 캡처 전에 카운트다운이 시작됩니다 (Esc 로 취소)";
+"countdownHint" = "⌥ Option 을 누른 채 ⌘ 를 두 번 누르거나 스크린샷 단축키를 누르면 캡처 전에 카운트다운이 시작되며 Esc 로 취소";
 "countdownSecondsSuffix" = "초";
 "windowShadowToggleLabel" = "창 캡처 그림자";
 "windowShadowToggleHint" = "창을 선택해 캡처할 때 모서리를 둥글게 하고 macOS 스타일 그림자를 추가합니다";
@@ -26,11 +26,11 @@
 
 /* Screenshot shortcut */
 "shortcutHeader" = "스크린샷";
-"shortcutHint" = "기본값은 ⌘ 두 번 누르기입니다. 사용자 단축키를 설정하면 두 번 누르기는 비활성화됩니다.";
+"shortcutHint" = "기본값은 ⌘ 두 번 누르기입니다. 사용자 단축키를 설정하면 두 번 누르기는 비활성화됩니다";
 "shortcutDefaultDisplay" = "⌘ 두 번 누르기";
 "shortcutSet" = "기록";
 "shortcutCancel" = "취소";
-"shortcutWaiting" = "키 입력 대기 중…";
+"shortcutWaiting" = "키 입력 대기 중";
 "shortcutRestore" = "기본값 복원";
 "selectedImagePinShortcutHeader" = "선택 이미지 고정";
 "selectedImagePinShortcutDefaultDisplay" = "설정 안 됨";
@@ -46,10 +46,10 @@
 
 /* Image-edit shortcuts */
 "selectedImageEditShortcutHeader" = "선택 이미지 편집";
-"selectedImageEditShortcutHint" = "Finder에서 선택한 단일 이미지를 바로 편집합니다. 기본값은 설정되어 있지 않습니다.";
+"selectedImageEditShortcutHint" = "Finder에서 선택한 단일 이미지를 바로 편집합니다. 기본값은 설정되어 있지 않습니다";
 "selectedImageEditShortcutDefaultDisplay" = "설정 안 됨";
 "clipboardImageEditShortcutHeader" = "클립보드 이미지 편집";
-"clipboardImageEditShortcutHint" = "현재 클립보드에 있는 이미지를 바로 편집합니다. 기본값은 설정되어 있지 않습니다.";
+"clipboardImageEditShortcutHint" = "현재 클립보드에 있는 이미지를 바로 편집합니다. 기본값은 설정되어 있지 않습니다";
 "clipboardImageEditShortcutDefaultDisplay" = "설정 안 됨";
 "textRecognitionShortcutHeader" = "문자 인식";
 "textRecognitionShortcutDefaultDisplay" = "설정 안 됨";
@@ -66,42 +66,42 @@
 
 /* Copy-to-clipboard shortcut (editor confirm) */
 "clipboardShortcutHeader" = "클립보드에 복사";
-"clipboardShortcutHint" = "편집기에서 누르면 편집을 확정하고 스크린샷을 클립보드에 복사합니다. 설정하지 않으면 ⌘ 더블탭이 기본값입니다.";
+"clipboardShortcutHint" = "편집기에서 누르면 편집을 확정하고 스크린샷을 클립보드에 복사합니다. 설정하지 않으면 ⌘ 더블탭이 기본값입니다";
 "clipboardShortcutDefaultDisplay" = "⌘ 더블탭";
 
 /* Save-to-file shortcut (editor save) */
 "fileSaveShortcutHeader" = "파일로 저장";
-"fileSaveShortcutHint" = "편집기에서 누르면 설정된 스크린샷 폴더에 PNG로 저장합니다. 기본값은 ⌘S입니다.";
+"fileSaveShortcutHint" = "편집기에서 누르면 설정된 스크린샷 폴더에 PNG로 저장합니다. 기본값은 ⌘S입니다";
 
 /* Shortcut conflict */
 "shortcutConflictTitle" = "단축키가 이미 사용 중입니다";
-"shortcutConflictScreenshot" = "이 키 조합은 이미 스크린샷 단축키에 사용되고 있습니다. 다른 조합을 선택하세요.";
-"shortcutConflictCountdown" = "이 키 조합은 이미 카운트다운 스크린샷 단축키(스크린샷 단축키 + ⌥)에 사용되고 있습니다. 다른 조합을 선택하세요.";
-"shortcutConflictSelectedImagePin" = "이 키 조합은 이미 선택 이미지 고정 단축키에 사용되고 있습니다. 다른 조합을 선택하세요.";
-"shortcutConflictClipboardImagePin" = "이 키 조합은 이미 클립보드 이미지 고정 단축키에 사용되고 있습니다. 다른 조합을 선택하세요.";
-"shortcutConflictClipboard" = "이 키 조합은 이미 클립보드에 복사 단축키에 사용되고 있습니다. 다른 조합을 선택하세요.";
-"shortcutConflictFileSave" = "이 키 조합은 이미 파일로 저장 단축키에 사용되고 있습니다. 다른 조합을 선택하세요.";
-"shortcutConflictSelectedImageEdit" = "이 키 조합은 이미 선택 이미지 편집 단축키에 사용되고 있습니다. 다른 조합을 선택하세요.";
-"shortcutConflictClipboardImageEdit" = "이 키 조합은 이미 클립보드 이미지 편집 단축키에 사용되고 있습니다. 다른 조합을 선택하세요.";
-"shortcutConflictTextRecognition" = "이 키 조합은 이미 문자 인식 단축키에 사용되고 있습니다. 다른 조합을 선택하세요.";
-"shortcutConflictCopyImageText" = "이 키 조합은 이미 이미지 텍스트 복사 단축키에 사용되고 있습니다. 다른 조합을 선택하세요.";
-"shortcutConflictScreenshotTranslation" = "이 키 조합은 이미 스크린샷 번역 단축키에 사용되고 있습니다. 다른 조합을 선택하세요.";
-"shortcutConflictRecord" = "이 키 조합은 이미 녹화 단축키에 사용되고 있습니다. 다른 조합을 선택하세요.";
-"shortcutConflictFullScreenScreenshot" = "이 키 조합은 이미 전체 화면 스크린샷 단축키에 사용되고 있습니다. 다른 조합을 선택하세요.";
-"shortcutConflictColorPicker" = "이 키 조합은 이미 색상 추출기 단축키에 사용되고 있습니다. 다른 조합을 선택하세요.";
+"shortcutConflictScreenshot" = "이 키 조합은 이미 스크린샷 단축키에 사용되고 있습니다. 다른 조합을 선택하세요";
+"shortcutConflictCountdown" = "이 키 조합은 이미 카운트다운 스크린샷 단축키(스크린샷 단축키 + ⌥)에 사용되고 있습니다. 다른 조합을 선택하세요";
+"shortcutConflictSelectedImagePin" = "이 키 조합은 이미 선택 이미지 고정 단축키에 사용되고 있습니다. 다른 조합을 선택하세요";
+"shortcutConflictClipboardImagePin" = "이 키 조합은 이미 클립보드 이미지 고정 단축키에 사용되고 있습니다. 다른 조합을 선택하세요";
+"shortcutConflictClipboard" = "이 키 조합은 이미 클립보드에 복사 단축키에 사용되고 있습니다. 다른 조합을 선택하세요";
+"shortcutConflictFileSave" = "이 키 조합은 이미 파일로 저장 단축키에 사용되고 있습니다. 다른 조합을 선택하세요";
+"shortcutConflictSelectedImageEdit" = "이 키 조합은 이미 선택 이미지 편집 단축키에 사용되고 있습니다. 다른 조합을 선택하세요";
+"shortcutConflictClipboardImageEdit" = "이 키 조합은 이미 클립보드 이미지 편집 단축키에 사용되고 있습니다. 다른 조합을 선택하세요";
+"shortcutConflictTextRecognition" = "이 키 조합은 이미 문자 인식 단축키에 사용되고 있습니다. 다른 조합을 선택하세요";
+"shortcutConflictCopyImageText" = "이 키 조합은 이미 이미지 텍스트 복사 단축키에 사용되고 있습니다. 다른 조합을 선택하세요";
+"shortcutConflictScreenshotTranslation" = "이 키 조합은 이미 스크린샷 번역 단축키에 사용되고 있습니다. 다른 조합을 선택하세요";
+"shortcutConflictRecord" = "이 키 조합은 이미 녹화 단축키에 사용되고 있습니다. 다른 조합을 선택하세요";
+"shortcutConflictFullScreenScreenshot" = "이 키 조합은 이미 전체 화면 스크린샷 단축키에 사용되고 있습니다. 다른 조합을 선택하세요";
+"shortcutConflictColorPicker" = "이 키 조합은 이미 색상 추출기 단축키에 사용되고 있습니다. 다른 조합을 선택하세요";
 
 /* Menu bar */
 "takeScreenshot" = "스크린샷";
 "takeFullScreenScreenshot" = "전체 화면 스크린샷";
 "record" = "녹화";
 "colorPicker" = "색상 추출기";
-"settings" = "설정...";
+"settings" = "설정";
 "quitApp" = "capcap 종료";
 "historyMenu" = "기록";
 "historyEmpty" = "기록 없음";
 "historyClear" = "기록 지우기";
 "historyShowInFinder" = "Finder에 표시";
-"historyCloudMarkdownTip" = "⌘ 키를 누른 채 미리보기 이미지를 클릭하면 Markdown 형식 이미지 링크를 복사합니다.";
+"historyCloudMarkdownTip" = "⌘ 키를 누른 채 미리보기 이미지를 클릭하면 Markdown 형식 이미지 링크를 복사합니다";
 
 /* Cursor chip */
 "dragToScreenshot" = "창을 클릭하거나 드래그하여 스크린샷";
@@ -113,7 +113,7 @@
 /* Toast */
 "copiedToClipboard" = "클립보드에 복사됨";
 "mergedLongScreenshot" = "긴 스크린샷이 병합됨";
-"autoScrollPermissionNeeded" = "스크롤 캡처에는 손쉬운 사용 권한이 필요합니다. 시스템 설정 → 개인정보 보호 및 보안 → 손쉬운 사용 에서 capcap 을 허용하세요.";
+"autoScrollPermissionNeeded" = "스크롤 캡처에는 손쉬운 사용 권한이 필요합니다. 시스템 설정 → 개인정보 보호 및 보안 → 손쉬운 사용 에서 capcap 을 허용하세요";
 "cropLongScreenshotHint" = "위/아래 가장자리를 드래그해 자르기 — Enter 키 또는 ✓ 탭";
 "scrollCaptureHint" = "아무 키나 눌러 스크롤 종료";
 "scrollCaptureManualHint" = "직접 스크롤한 뒤 아무 키나 누르거나 초록색 버튼을 클릭해 종료";
@@ -126,16 +126,16 @@
 "clipboardImageEditNoImage" = "클립보드에 편집할 이미지가 없습니다";
 "recordingSaved" = "녹화가 %@에 저장되었습니다";
 "recordingCancelled" = "녹화가 취소되었습니다";
-"recordingExportingGIF" = "GIF 생성 중…";
+"recordingExportingGIF" = "GIF 생성 중";
 "recordingFailed" = "녹화 실패: %@";
 "saveRecording" = "녹화 저장";
 "saveRecordingPrompt" = "저장";
-"recordingFormatLabel" = "형식:";
+"recordingFormatLabel" = "형식";
 "recordingFormatManual" = "매번 선택";
 "recordingFormatMP4" = "MP4";
 "recordingFormatGIF" = "GIF";
 "recordingFormatChoiceTitle" = "녹화 형식 선택";
-"recordingFormatChoiceMessage" = "녹화는 설정된 녹화 폴더에 저장됩니다.";
+"recordingFormatChoiceMessage" = "녹화는 설정된 녹화 폴더에 저장됩니다";
 "screenshotSaved" = "스크린샷이 %@에 저장되었습니다";
 "screenshotSaveFailed" = "스크린샷 저장 실패: %@";
 "recordingStop" = "녹화 중지";
@@ -196,7 +196,7 @@
 "shapeStyleStandard" = "기본 스타일";
 "shapeStyleHandDrawn" = "손그림 둥근 스타일";
 "insertImageFromClipboard" = "클립보드에서";
-"insertImageFromFile" = "파일에서...";
+"insertImageFromFile" = "파일에서";
 "insertImageChooseFile" = "이미지 선택";
 "insertImageNoClipboardImage" = "클립보드에 이미지가 없습니다";
 "scrollCaptureAutoScroll" = "자동 스크롤";
@@ -221,7 +221,7 @@
 "toolbarSettingsSideHint" = "도구가 선택 영역 왼쪽 또는 오른쪽에 표시됩니다";
 "toolbarSettingsHiddenTitle" = "숨긴 도구";
 "toolbarSettingsHiddenHint" = "여기로 끌어다 놓은 도구는 어떤 도구 모음에도 표시되지 않습니다";
-"toolbarSettingsFootnote" = "도구 모음은 선택 영역 위치에 따라 위/아래 또는 좌/우 배치로 자동 전환됩니다.";
+"toolbarSettingsFootnote" = "도구 모음은 선택 영역 위치에 따라 위/아래 또는 좌/우 배치로 자동 전환됩니다";
 "toolbarSettingsReset" = "기본값으로 재설정";
 "toolbarSettingsCancel" = "취소";
 "toolbarSettingsApply" = "적용";
@@ -242,11 +242,11 @@
 "aboutErrorLogReveal" = "Finder에 표시";
 "aboutErrorLogRefresh" = "로그 새로고침";
 "aboutErrorLogClear" = "로그 지우기";
-"aboutErrorLogEmptyBody" = "capcap에 기록된 오류 로그가 아직 없습니다. 앱이 멈추거나 충돌하면 여기로 돌아와 로그를 복사해 버그 신고에 사용하세요.";
+"aboutErrorLogEmptyBody" = "capcap에 기록된 오류 로그가 아직 없습니다. 앱이 멈추거나 충돌하면 여기로 돌아와 로그를 복사해 버그 신고에 사용하세요";
 
 /* Updates — About pane */
 "checkForUpdates" = "업데이트 확인";
-"updateChecking" = "확인 중…";
+"updateChecking" = "확인 중";
 "updateUpToDateStatus" = "최신 버전";
 "updateNewVersionStatus" = "새 버전 v%@";
 "updateFailedStatus" = "확인 실패";
@@ -254,41 +254,41 @@
 "updateRetryButton" = "다시 시도";
 "updateInstallNowButton" = "지금 업데이트";
 "updateDownloadingStatus" = "다운로드 중 %d%%";
-"updateInstallingStatus" = "설치 중…";
+"updateInstallingStatus" = "설치 중";
 "updateInstallFailedStatus" = "설치 실패";
 
 /* Updates — menu bar */
-"checkForUpdatesMenu" = "업데이트 확인…";
-"checkingForUpdatesMenu" = "업데이트 확인 중…";
+"checkForUpdatesMenu" = "업데이트 확인";
+"checkingForUpdatesMenu" = "업데이트 확인 중";
 "updateAvailableMenu" = "새 버전 v%@ 사용 가능";
 "updateDownloadingMenu" = "업데이트 다운로드 중… %d%%";
-"updateInstallingMenu" = "업데이트 설치 중…";
+"updateInstallingMenu" = "업데이트 설치 중";
 "updateInstallFailedMenu" = "업데이트 설치 실패";
 
 /* Updates — progress HUD */
-"updateCheckingHUD" = "업데이트 확인 중…";
+"updateCheckingHUD" = "업데이트 확인 중";
 "updateDownloadingHUD" = "업데이트 다운로드 중 %d%%";
-"updateVerifyingHUD" = "업데이트 검증 중…";
-"updateUnzippingHUD" = "압축 해제 중…";
-"updateInstallingHUD" = "설치 중…";
+"updateVerifyingHUD" = "업데이트 검증 중";
+"updateUnzippingHUD" = "압축 해제 중";
+"updateInstallingHUD" = "설치 중";
 
 /* Updates — manual check result alert */
 "updateAvailableTitle" = "버전 v%@ 사용 가능";
-"updateAvailableBody" = "capcap이 최신 버전을 다운로드하고 설치한 후 자동으로 다시 시작합니다.";
+"updateAvailableBody" = "capcap이 최신 버전을 다운로드하고 설치한 후 자동으로 다시 시작합니다";
 "updateUpToDateTitle" = "최신 상태입니다";
-"updateUpToDateBody" = "capcap v%@ 가 최신 버전입니다.";
+"updateUpToDateBody" = "capcap v%@ 가 최신 버전입니다";
 "updateFailedTitle" = "업데이트 확인 실패";
-"updateFailedBody" = "GitHub에 연결할 수 없습니다. 네트워크를 확인하고 다시 시도하세요.";
+"updateFailedBody" = "GitHub에 연결할 수 없습니다. 네트워크를 확인하고 다시 시도하세요";
 "updateInstallFailedTitle" = "업데이트 실패";
-"updateInstallFailedBody" = "업데이트를 다운로드하거나 설치하는 중 문제가 발생했습니다. GitHub 릴리스 페이지에서 수동으로 다운로드할 수 있습니다.";
+"updateInstallFailedBody" = "업데이트를 다운로드하거나 설치하는 중 문제가 발생했습니다. GitHub 릴리스 페이지에서 수동으로 다운로드할 수 있습니다";
 "updateOpenPageButton" = "GitHub 열기";
 "updateSkipButton" = "이 버전 건너뛰기";
 "updateLaterButton" = "나중에";
 "updateOKButton" = "확인";
 
 /* Quit confirmation dialog */
-"quitConfirmTitle" = "capcap을 종료할까요?";
-"quitConfirmMessage" = "종료하면 메뉴 막대 아이콘이 사라지고 capcap을 다시 실행할 때까지 스크린샷 단축키가 비활성화됩니다.";
+"quitConfirmTitle" = "capcap을 종료할까요";
+"quitConfirmMessage" = "종료하면 메뉴 막대 아이콘이 사라지고 capcap을 다시 실행할 때까지 스크린샷 단축키가 비활성화됩니다";
 "quitConfirmAction" = "종료";
 "quitConfirmCancel" = "취소";
 
@@ -298,7 +298,7 @@
 "uploadCopied" = "이미지 URL이 복사됨";
 "uploadCopiedMarkdown" = "Markdown 링크가 복사됨";
 "uploadNoProvider" = "먼저 설정에서 이미지 호스트를 구성하세요";
-"uploadFailedPrefix" = "업로드 실패: ";
+"uploadFailedPrefix" = "업로드 실패";
 
 /* Upload — settings tab */
 "uploadDefaultProvider" = "기본 이미지 호스트";
@@ -309,36 +309,36 @@
 "uploadSavedToast" = "설정이 저장됨";
 "uploadCurrentDefault" = "현재 기본값";
 "uploadMarkdownToggleTitle" = "Markdown 링크로 복사";
-"uploadMarkdownToggleSubtitle" = "켜면 업로드 후 Markdown 이미지 태그(![](url))를 복사하고, 끄면 일반 URL을 복사합니다. 기록에서 ⌘ 를 누른 채 업로드된 이미지를 클릭하면 Markdown 링크를, 그냥 클릭하면 일반 URL을 복사합니다.";
+"uploadMarkdownToggleSubtitle" = "켜면 업로드 후 Markdown 이미지 태그(![](url))를 복사하고, 끄면 일반 URL을 복사합니다. 기록에서 ⌘ 를 누른 채 업로드된 이미지를 클릭하면 Markdown 링크를, 그냥 클릭하면 일반 URL을 복사합니다";
 "filenameRuleTitle" = "파일 이름 규칙";
-"filenameRuleSubtitle" = "이미지 업로드, 이미지 저장 기본 이름, 녹화 저장 기본 이름을 제어합니다. 확장자는 자동으로 추가됩니다.";
-"filenameRulePresetLabel" = "프리셋:";
+"filenameRuleSubtitle" = "이미지 업로드, 이미지 저장 기본 이름, 녹화 저장 기본 이름을 제어합니다. 확장자는 자동으로 추가됩니다";
+"filenameRulePresetLabel" = "프리셋";
 "filenameRulePresetCustom" = "사용자 지정";
 "filenameRulePresetShort" = "짧게";
 "filenameRulePresetCompact" = "짧은 링크";
 "filenameRulePresetUnique" = "중복 방지";
 "filenameRulePresetCounter" = "일일 카운터";
 "filenameRulePresetRestore" = "기본값 복원";
-"filenameRuleImageLabel" = "이미지:";
-"filenameRuleRecordingLabel" = "녹화:";
-"filenameRuleVariablesLabel" = "변수:";
+"filenameRuleImageLabel" = "이미지";
+"filenameRuleRecordingLabel" = "녹화";
+"filenameRuleVariablesLabel" = "변수";
 "filenameRuleVariableDate" = "날짜";
 "filenameRuleVariableTime" = "시간";
 "filenameRuleVariableDaily" = "일일 번호";
 "filenameRuleVariableRandom" = "랜덤";
 "filenameRuleVariableSize" = "크기";
-"filenameRulePreview" = "미리보기: %@";
+"filenameRulePreview" = "%@";
 
 /* Upload — provider field labels */
 "uploadFieldBucket" = "버킷";
 "uploadFieldBucketSpace" = "버킷";
 "uploadFieldRegion" = "리전";
-"uploadFieldRegionOptional" = "리전(선택)";
-"uploadFieldPathOptional" = "경로(선택)";
-"uploadFieldCustomUrlOptional" = "사용자 도메인(선택)";
+"uploadFieldRegionOptional" = "선택 리전";
+"uploadFieldPathOptional" = "선택 경로";
+"uploadFieldCustomUrlOptional" = "선택 사용자 도메인";
 "uploadFieldPublicDomain" = "공개 도메인";
 "uploadFieldEndpointArea" = "엔드포인트";
-"uploadFieldEndpointOptional" = "엔드포인트(선택)";
+"uploadFieldEndpointOptional" = "선택 엔드포인트";
 "uploadFieldAccountId" = "계정 ID";
 "uploadTestImageFailed" = "테스트 이미지를 생성할 수 없습니다";
 
@@ -349,20 +349,20 @@
 
 /* Upload — errors */
 "uploadErrMissingConfig" = "업로드 호스트가 설정되지 않음";
-"uploadErrInvalidConfigPrefix" = "잘못된 설정: ";
-"uploadErrNetworkPrefix" = "네트워크 오류: ";
-"uploadErrServerPrefix" = "업로드 실패 (%d): ";
-"uploadErrUnexpectedResponsePrefix" = "예기치 않은 응답: ";
+"uploadErrInvalidConfigPrefix" = "잘못된 설정";
+"uploadErrNetworkPrefix" = "네트워크 오류";
+"uploadErrServerPrefix" = "업로드 실패 코드 %d";
+"uploadErrUnexpectedResponsePrefix" = "예기치 않은 응답";
 "missingField" = "%@ 누락됨";
 
 /* Upload — test/validation pill */
 "uploadStatusUntested" = "테스트 안 됨";
-"uploadStatusTesting" = "테스트 중…";
+"uploadStatusTesting" = "테스트 중";
 "uploadStatusValid" = "활성";
 "uploadStatusInvalid" = "잘못된 설정";
 
 /* Upload — log lines */
-"uploadLogStartingTest" = "테스트 업로드 시작…";
+"uploadLogStartingTest" = "테스트 업로드 시작";
 "uploadLogConfigSaved" = "설정이 저장됨";
 "uploadLogMissingFields" = "필수 항목 누락: %@";
 "uploadLogTestSucceeded" = "테스트 업로드 성공: %@";
@@ -376,18 +376,18 @@
 
 /* OCR & Translation — result panel */
 "ocrTextHeader" = "인식된 텍스트";
-"ocrRecognizing" = "인식 중…";
+"ocrRecognizing" = "인식 중";
 "ocrNoText" = "텍스트를 찾을 수 없음";
 "ocrCopy" = "복사";
 "ocrCopied" = "복사됨";
 "ocrRetry" = "다시 시도";
-"ocrTranslating" = "번역 중…";
-"ocrTranslateFailedPrefix" = "실패: ";
+"ocrTranslating" = "번역 중";
+"ocrTranslateFailedPrefix" = "실패";
 "ocrNoProviderTitle" = "번역 서비스가 설정되지 않음";
 "ocrNoProviderHint" = "설정 → 번역 에서 AI 서비스를 추가하세요";
 "ocrOpenSettings" = "설정 열기";
 "ocrLineCopied" = "줄 복사됨";
-"copyImageTextCopying" = "복사 중…";
+"copyImageTextCopying" = "복사 중";
 "copyImageTextCopied" = "이미지 텍스트 복사됨";
 "copyImageTextNoText" = "텍스트를 찾을 수 없음";
 "screenshotTranslationHeader" = "번역";
@@ -399,27 +399,27 @@
 "dictionaryExampleLabel" = "예문";
 "dictionaryDifficultyLabel" = "난이도";
 "dictionaryNoProviderTitle" = "사전 모드를 지원하는 AI 서비스가 설정되지 않음";
-"dictionaryNoProviderHint" = "설정 → 번역에서 OpenAI, DeepSeek, Claude 또는 OpenAI 호환 사용자 정의 서비스를 활성화하세요.";
+"dictionaryNoProviderHint" = "설정 → 번역에서 OpenAI, DeepSeek, Claude 또는 OpenAI 호환 사용자 정의 서비스를 활성화하세요";
 
 /* Translation — settings tab */
 "translationDictionaryModeTitle" = "사전 모드";
-"translationDictionaryModeSubtitle" = "스크린샷 번역에서 영어 단어 하나만 인식되면 발음, 뜻, 예문, 번역, CEFR 수준을 표시합니다.";
+"translationDictionaryModeSubtitle" = "스크린샷 번역에서 영어 단어 하나만 인식되면 발음, 뜻, 예문, 번역, CEFR 수준을 표시합니다";
 "translationTargetLanguage" = "대상 언어";
-"translationTargetHint" = "인식된 텍스트는 이 언어로 번역됩니다. 이미 해당 언어인 경우 영어로 번역됩니다.";
+"translationTargetHint" = "인식된 텍스트는 이 언어로 번역됩니다. 이미 해당 언어인 경우 영어로 번역됩니다";
 "translationProvidersHeader" = "AI 번역 서비스";
 "translationApiKey" = "API 키";
-"translationApiKeyOptional" = "API 키(선택)";
+"translationApiKeyOptional" = "선택 API 키";
 "translationModel" = "모델";
 "translationEndpoint" = "엔드포인트";
-"translationEndpointOptional" = "엔드포인트(선택)";
+"translationEndpointOptional" = "선택 엔드포인트";
 "translationSave" = "저장";
 "translationClear" = "지우기";
 "translationConfigSaved" = "설정이 저장됨";
-"translationTesting" = "테스트 중…";
+"translationTesting" = "테스트 중";
 "translationTestPassed" = "테스트 통과";
 "translationTestFailed" = "테스트 실패";
 "translationTestFailedTitle" = "저장했지만 연결 테스트에 실패했습니다";
-"translationProviderCustom" = "사용자 정의 (OpenAI 호환)";
+"translationProviderCustom" = "사용자 정의 OpenAI 호환";
 "translationMoveUp" = "위로 이동";
 "translationMoveDown" = "아래로 이동";
 
@@ -437,7 +437,7 @@
 /* Image Merge */
 "imageMergeShortcutHeader" = "이미지 병합";
 "imageMergeShortcutDefaultDisplay" = "설정 안 됨";
-"shortcutConflictImageMerge" = "이 키 조합은 이미지 병합 단축키에서 이미 사용 중입니다. 다른 조합을 선택하세요.";
+"shortcutConflictImageMerge" = "이 키 조합은 이미지 병합 단축키에서 이미 사용 중입니다. 다른 조합을 선택하세요";
 "mergeImages" = "이미지 병합";
 "mergeEditExitHint" = "병합된 이미지를 편집 중입니다. X를 눌러 편집을 종료";
 "imageMergeNeedTwoImages" = "병합하려면 Finder 이미지 두 개 이상을 선택하세요";
@@ -473,13 +473,13 @@
 
 /* Save paths */
 "savePathTitle" = "저장 경로";
-"savePathSubtitle" = "스크린샷과 녹화는 저장 위치를 묻지 않고 여기에 저장됩니다.";
+"savePathSubtitle" = "스크린샷과 녹화는 저장 위치를 묻지 않고 여기에 저장됩니다";
 "autoRevealSavedFilesLabel" = "Finder에 표시";
-"autoRevealSavedFilesHint" = "저장 성공 후 Finder에서 저장된 스크린샷 또는 녹화를 선택합니다.";
+"autoRevealSavedFilesHint" = "저장 성공 후 Finder에서 저장된 스크린샷 또는 녹화를 선택합니다";
 "recordingSavePathLabel" = "녹화 저장 경로";
 "recordingSaveFormatSettingLabel" = "녹화 형식";
 "screenshotSavePathLabel" = "스크린샷 저장 경로";
-"savePathChoose" = "선택...";
+"savePathChoose" = "선택";
 "savePathReveal" = "보기";
 "chooseRecordingSavePathTitle" = "녹화 저장 경로 선택";
 "chooseScreenshotSavePathTitle" = "스크린샷 저장 경로 선택";

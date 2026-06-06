@@ -44,13 +44,13 @@ enum UploadError: LocalizedError {
         case .missingConfig:
             return L10n.uploadErrMissingConfig
         case .invalidConfig(let m):
-            return L10n.uploadErrInvalidConfigPrefix + m
+            return "\(L10n.uploadErrInvalidConfigPrefix) \(m)"
         case .network(let m):
-            return L10n.uploadErrNetworkPrefix + m
+            return "\(L10n.uploadErrNetworkPrefix) \(m)"
         case .server(let code, let m):
-            return L10n.uploadErrServerPrefix(code) + m
+            return "\(L10n.uploadErrServerPrefix(code)) \(m)"
         case .unexpectedResponse(let m):
-            return L10n.uploadErrUnexpectedResponsePrefix + m
+            return "\(L10n.uploadErrUnexpectedResponsePrefix) \(m)"
         }
     }
 }

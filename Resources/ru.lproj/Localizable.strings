@@ -5,9 +5,9 @@
 "showMenuBarIcon" = "Показывать значок в строке меню";
 "permissionsHeader" = "Необходимые разрешения";
 "accessibilityPermission" = "Универсальный доступ";
-"accessibilityDescription" = "Необходимо для обнаружения двойного нажатия клавиши ⌘ Command для создания снимков экрана.";
+"accessibilityDescription" = "Необходимо для обнаружения двойного нажатия клавиши ⌘ Command для создания снимков экрана";
 "screenRecordingPermission" = "Запись экрана";
-"screenRecordingDescription" = "Необходимо для захвата содержимого экрана при создании снимков.";
+"screenRecordingDescription" = "Необходимо для захвата содержимого экрана при создании снимков";
 "launchApp" = "Запустить приложение";
 "launchAtLogin" = "Запускать при входе";
 "demoMode" = "Демонстрационный режим";
@@ -17,7 +17,7 @@
 "historyCacheLabel" = "Размер кэша истории";
 "historyCacheHint" = "Хранит недавние снимки для быстрого повторного копирования";
 "countdownLabel" = "Секунды обратного отсчёта";
-"countdownHint" = "Удерживайте ⌥ Option, затем дважды нажмите ⌘ или сочетание для снимка, чтобы запустить обратный отсчёт перед захватом (Esc — отмена)";
+"countdownHint" = "Удерживайте ⌥ Option, затем дважды нажмите ⌘ или сочетание для снимка, чтобы запустить обратный отсчёт перед захватом, Esc — отмена";
 "countdownSecondsSuffix" = "с";
 "windowShadowToggleLabel" = "Тень при снимке окна";
 "windowShadowToggleHint" = "Скругляет углы снимков окон и добавляет тень в стиле macOS";
@@ -26,11 +26,11 @@
 
 /* Screenshot shortcut */
 "shortcutHeader" = "Снимок экрана";
-"shortcutHint" = "По умолчанию: двойное нажатие ⌘. Назначение своего сочетания отключает двойное нажатие.";
+"shortcutHint" = "По умолчанию: двойное нажатие ⌘. Назначение своего сочетания отключает двойное нажатие";
 "shortcutDefaultDisplay" = "Двойное нажатие ⌘";
 "shortcutSet" = "Задать";
 "shortcutCancel" = "Отмена";
-"shortcutWaiting" = "Нажмите клавиши…";
+"shortcutWaiting" = "Нажмите клавиши";
 "shortcutRestore" = "Сбросить";
 "selectedImagePinShortcutHeader" = "Закрепить выбранное изображение";
 "selectedImagePinShortcutDefaultDisplay" = "Не задано";
@@ -46,10 +46,10 @@
 
 /* Image-edit shortcuts */
 "selectedImageEditShortcutHeader" = "Редактировать выбранное изображение";
-"selectedImageEditShortcutHint" = "Нажмите, чтобы сразу редактировать одно изображение, выбранное в Finder. По умолчанию не задано.";
+"selectedImageEditShortcutHint" = "Нажмите, чтобы сразу редактировать одно изображение, выбранное в Finder. По умолчанию не задано";
 "selectedImageEditShortcutDefaultDisplay" = "Не задано";
 "clipboardImageEditShortcutHeader" = "Редактировать изображение из буфера";
-"clipboardImageEditShortcutHint" = "Нажмите, чтобы сразу редактировать текущее изображение в буфере обмена. По умолчанию не задано.";
+"clipboardImageEditShortcutHint" = "Нажмите, чтобы сразу редактировать текущее изображение в буфере обмена. По умолчанию не задано";
 "clipboardImageEditShortcutDefaultDisplay" = "Не задано";
 "textRecognitionShortcutHeader" = "Распознавание текста";
 "textRecognitionShortcutDefaultDisplay" = "Не задано";
@@ -66,42 +66,42 @@
 
 /* Copy-to-clipboard shortcut (editor confirm) */
 "clipboardShortcutHeader" = "Копировать в буфер обмена";
-"clipboardShortcutHint" = "Нажмите в редакторе, чтобы подтвердить правку и скопировать снимок в буфер обмена. По умолчанию — двойное нажатие ⌘.";
+"clipboardShortcutHint" = "Нажмите в редакторе, чтобы подтвердить правку и скопировать снимок в буфер обмена. По умолчанию — двойное нажатие ⌘";
 "clipboardShortcutDefaultDisplay" = "Двойное нажатие ⌘";
 
 /* Save-to-file shortcut (editor save) */
 "fileSaveShortcutHeader" = "Сохранить в файл";
-"fileSaveShortcutHint" = "Нажмите в редакторе, чтобы сохранить снимок PNG в заданную папку снимков. По умолчанию — ⌘S.";
+"fileSaveShortcutHint" = "Нажмите в редакторе, чтобы сохранить снимок PNG в заданную папку снимков. По умолчанию — ⌘S";
 
 /* Shortcut conflict */
 "shortcutConflictTitle" = "Сочетание уже используется";
-"shortcutConflictScreenshot" = "Это сочетание клавиш уже назначено для снимка экрана. Выберите другое.";
-"shortcutConflictCountdown" = "Это сочетание клавиш уже назначено для снимка экрана с обратным отсчётом (сочетание для снимка + ⌥). Выберите другое.";
-"shortcutConflictSelectedImagePin" = "Это сочетание клавиш уже назначено для закрепления выбранного изображения. Выберите другое.";
-"shortcutConflictClipboardImagePin" = "Это сочетание клавиш уже назначено для закрепления изображения из буфера. Выберите другое.";
-"shortcutConflictClipboard" = "Это сочетание клавиш уже назначено для копирования в буфер обмена. Выберите другое.";
-"shortcutConflictFileSave" = "Это сочетание клавиш уже назначено для сохранения в файл. Выберите другое.";
-"shortcutConflictSelectedImageEdit" = "Это сочетание клавиш уже назначено для редактирования выбранного изображения. Выберите другое.";
-"shortcutConflictClipboardImageEdit" = "Это сочетание клавиш уже назначено для редактирования изображения из буфера. Выберите другое.";
-"shortcutConflictTextRecognition" = "Это сочетание клавиш уже назначено для распознавания текста. Выберите другое.";
-"shortcutConflictCopyImageText" = "Это сочетание клавиш уже назначено для копирования текста с изображения. Выберите другое.";
-"shortcutConflictScreenshotTranslation" = "Это сочетание клавиш уже назначено для перевода снимка. Выберите другое.";
-"shortcutConflictRecord" = "Это сочетание клавиш уже назначено для записи. Выберите другое.";
-"shortcutConflictFullScreenScreenshot" = "Это сочетание клавиш уже назначено для снимка всего экрана. Выберите другое.";
-"shortcutConflictColorPicker" = "Это сочетание клавиш уже назначено для пипетки. Выберите другое.";
+"shortcutConflictScreenshot" = "Это сочетание клавиш уже назначено для снимка экрана. Выберите другое";
+"shortcutConflictCountdown" = "Это сочетание клавиш уже назначено для снимка экрана с обратным отсчётом (сочетание для снимка + ⌥). Выберите другое";
+"shortcutConflictSelectedImagePin" = "Это сочетание клавиш уже назначено для закрепления выбранного изображения. Выберите другое";
+"shortcutConflictClipboardImagePin" = "Это сочетание клавиш уже назначено для закрепления изображения из буфера. Выберите другое";
+"shortcutConflictClipboard" = "Это сочетание клавиш уже назначено для копирования в буфер обмена. Выберите другое";
+"shortcutConflictFileSave" = "Это сочетание клавиш уже назначено для сохранения в файл. Выберите другое";
+"shortcutConflictSelectedImageEdit" = "Это сочетание клавиш уже назначено для редактирования выбранного изображения. Выберите другое";
+"shortcutConflictClipboardImageEdit" = "Это сочетание клавиш уже назначено для редактирования изображения из буфера. Выберите другое";
+"shortcutConflictTextRecognition" = "Это сочетание клавиш уже назначено для распознавания текста. Выберите другое";
+"shortcutConflictCopyImageText" = "Это сочетание клавиш уже назначено для копирования текста с изображения. Выберите другое";
+"shortcutConflictScreenshotTranslation" = "Это сочетание клавиш уже назначено для перевода снимка. Выберите другое";
+"shortcutConflictRecord" = "Это сочетание клавиш уже назначено для записи. Выберите другое";
+"shortcutConflictFullScreenScreenshot" = "Это сочетание клавиш уже назначено для снимка всего экрана. Выберите другое";
+"shortcutConflictColorPicker" = "Это сочетание клавиш уже назначено для пипетки. Выберите другое";
 
 /* Menu bar */
 "takeScreenshot" = "Сделать снимок";
 "takeFullScreenScreenshot" = "Снимок всего экрана";
 "record" = "Запись";
 "colorPicker" = "Пипетка";
-"settings" = "Настройки...";
+"settings" = "Настройки";
 "quitApp" = "Завершить capcap";
 "historyMenu" = "История";
 "historyEmpty" = "История пуста";
 "historyClear" = "Очистить историю";
 "historyShowInFinder" = "Показать в Finder";
-"historyCloudMarkdownTip" = "Удерживайте ⌘ и щёлкните миниатюру, чтобы скопировать ссылку на изображение в формате Markdown.";
+"historyCloudMarkdownTip" = "Удерживайте ⌘ и щёлкните миниатюру, чтобы скопировать ссылку на изображение в формате Markdown";
 
 /* Cursor chip */
 "dragToScreenshot" = "Нажмите на окно или перетащите для снимка";
@@ -113,7 +113,7 @@
 /* Toast */
 "copiedToClipboard" = "Скопировано в буфер обмена";
 "mergedLongScreenshot" = "Длинный снимок объединён";
-"autoScrollPermissionNeeded" = "Для захвата с прокруткой нужен Универсальный доступ — разрешите capcap в Системных настройках → Конфиденциальность и безопасность → Универсальный доступ.";
+"autoScrollPermissionNeeded" = "Для захвата с прокруткой нужен Универсальный доступ — разрешите capcap в Системных настройках → Конфиденциальность и безопасность → Универсальный доступ";
 "cropLongScreenshotHint" = "Перетащите верхний/нижний край для обрезки — нажмите Enter или ✓";
 "scrollCaptureHint" = "Нажмите любую клавишу, чтобы остановить прокрутку";
 "scrollCaptureManualHint" = "Прокрутите вручную, затем нажмите любую клавишу или зелёную кнопку для завершения";
@@ -126,16 +126,16 @@
 "clipboardImageEditNoImage" = "В буфере обмена нет изображения для редактирования";
 "recordingSaved" = "Запись сохранена в %@";
 "recordingCancelled" = "Запись отменена";
-"recordingExportingGIF" = "Создание GIF…";
+"recordingExportingGIF" = "Создание GIF";
 "recordingFailed" = "Не удалось записать: %@";
 "saveRecording" = "Сохранить запись";
 "saveRecordingPrompt" = "Сохранить";
-"recordingFormatLabel" = "Формат:";
+"recordingFormatLabel" = "Формат";
 "recordingFormatManual" = "Выбирать каждый раз";
 "recordingFormatMP4" = "MP4";
 "recordingFormatGIF" = "GIF";
 "recordingFormatChoiceTitle" = "Выберите формат записи";
-"recordingFormatChoiceMessage" = "Запись будет сохранена в заданную папку записей.";
+"recordingFormatChoiceMessage" = "Запись будет сохранена в заданную папку записей";
 "screenshotSaved" = "Снимок сохранён в %@";
 "screenshotSaveFailed" = "Не удалось сохранить снимок: %@";
 "recordingStop" = "Остановить запись";
@@ -196,7 +196,7 @@
 "shapeStyleStandard" = "Обычный стиль";
 "shapeStyleHandDrawn" = "Рисованный скруглённый стиль";
 "insertImageFromClipboard" = "Из буфера обмена";
-"insertImageFromFile" = "Из файла...";
+"insertImageFromFile" = "Из файла";
 "insertImageChooseFile" = "Выбрать изображение";
 "insertImageNoClipboardImage" = "В буфере обмена нет изображения";
 "scrollCaptureAutoScroll" = "Автопрокрутка";
@@ -221,7 +221,7 @@
 "toolbarSettingsSideHint" = "Инструменты появляются слева или справа от выделения";
 "toolbarSettingsHiddenTitle" = "Скрытые инструменты";
 "toolbarSettingsHiddenHint" = "Инструменты, перетащенные сюда, не появляются ни на одной панели";
-"toolbarSettingsFootnote" = "Панели автоматически переключаются между расположением сверху/снизу и слева/справа в зависимости от положения выделения.";
+"toolbarSettingsFootnote" = "Панели автоматически переключаются между расположением сверху/снизу и слева/справа в зависимости от положения выделения";
 "toolbarSettingsReset" = "Сбросить";
 "toolbarSettingsCancel" = "Отмена";
 "toolbarSettingsApply" = "Применить";
@@ -242,11 +242,11 @@
 "aboutErrorLogReveal" = "Показать в Finder";
 "aboutErrorLogRefresh" = "Обновить журнал";
 "aboutErrorLogClear" = "Очистить журнал";
-"aboutErrorLogEmptyBody" = "capcap пока не зафиксировал журналов ошибок. Если приложение зависнет или завершится аварийно, вернитесь сюда, чтобы скопировать журнал для отчёта об ошибке.";
+"aboutErrorLogEmptyBody" = "capcap пока не зафиксировал журналов ошибок. Если приложение зависнет или завершится аварийно, вернитесь сюда, чтобы скопировать журнал для отчёта об ошибке";
 
 /* Updates — About pane */
 "checkForUpdates" = "Проверить обновления";
-"updateChecking" = "Проверка…";
+"updateChecking" = "Проверка";
 "updateUpToDateStatus" = "Установлена последняя версия";
 "updateNewVersionStatus" = "Новая версия v%@";
 "updateFailedStatus" = "Не удалось проверить";
@@ -254,41 +254,41 @@
 "updateRetryButton" = "Повторить";
 "updateInstallNowButton" = "Обновить сейчас";
 "updateDownloadingStatus" = "Загрузка %d%%";
-"updateInstallingStatus" = "Установка…";
+"updateInstallingStatus" = "Установка";
 "updateInstallFailedStatus" = "Не удалось установить";
 
 /* Updates — menu bar */
-"checkForUpdatesMenu" = "Проверить обновления…";
-"checkingForUpdatesMenu" = "Проверка обновлений…";
+"checkForUpdatesMenu" = "Проверить обновления";
+"checkingForUpdatesMenu" = "Проверка обновлений";
 "updateAvailableMenu" = "Доступна новая версия v%@";
 "updateDownloadingMenu" = "Загрузка обновления… %d%%";
-"updateInstallingMenu" = "Установка обновления…";
+"updateInstallingMenu" = "Установка обновления";
 "updateInstallFailedMenu" = "Не удалось установить обновление";
 
 /* Updates — progress HUD */
-"updateCheckingHUD" = "Проверка обновлений…";
+"updateCheckingHUD" = "Проверка обновлений";
 "updateDownloadingHUD" = "Загрузка обновления %d%%";
-"updateVerifyingHUD" = "Проверка обновления…";
-"updateUnzippingHUD" = "Распаковка…";
-"updateInstallingHUD" = "Установка…";
+"updateVerifyingHUD" = "Проверка обновления";
+"updateUnzippingHUD" = "Распаковка";
+"updateInstallingHUD" = "Установка";
 
 /* Updates — manual check result alert */
 "updateAvailableTitle" = "Доступна версия v%@";
-"updateAvailableBody" = "capcap загрузит и установит последнюю версию, затем автоматически перезапустится.";
+"updateAvailableBody" = "capcap загрузит и установит последнюю версию, затем автоматически перезапустится";
 "updateUpToDateTitle" = "У вас последняя версия";
-"updateUpToDateBody" = "capcap v%@ — это последняя версия.";
+"updateUpToDateBody" = "capcap v%@ — это последняя версия";
 "updateFailedTitle" = "Не удалось проверить обновления";
-"updateFailedBody" = "Не удалось связаться с GitHub. Проверьте подключение и повторите попытку.";
+"updateFailedBody" = "Не удалось связаться с GitHub. Проверьте подключение и повторите попытку";
 "updateInstallFailedTitle" = "Не удалось обновить";
-"updateInstallFailedBody" = "При загрузке или установке обновления произошла ошибка. Вы можете загрузить его вручную со страницы релизов GitHub.";
+"updateInstallFailedBody" = "При загрузке или установке обновления произошла ошибка. Вы можете загрузить его вручную со страницы релизов GitHub";
 "updateOpenPageButton" = "Открыть GitHub";
 "updateSkipButton" = "Пропустить эту версию";
 "updateLaterButton" = "Позже";
 "updateOKButton" = "ОК";
 
 /* Quit confirmation dialog */
-"quitConfirmTitle" = "Завершить capcap?";
-"quitConfirmMessage" = "После выхода значок в строке меню исчезнет, а сочетание для снимка будет отключено до следующего запуска capcap.";
+"quitConfirmTitle" = "Завершить capcap";
+"quitConfirmMessage" = "После выхода значок в строке меню исчезнет, а сочетание для снимка будет отключено до следующего запуска capcap";
 "quitConfirmAction" = "Завершить";
 "quitConfirmCancel" = "Отмена";
 
@@ -298,7 +298,7 @@
 "uploadCopied" = "URL изображения скопирован";
 "uploadCopiedMarkdown" = "Ссылка Markdown скопирована";
 "uploadNoProvider" = "Сначала настройте хостинг в настройках";
-"uploadFailedPrefix" = "Не удалось загрузить: ";
+"uploadFailedPrefix" = "Не удалось загрузить";
 
 /* Upload — settings tab */
 "uploadDefaultProvider" = "Хостинг по умолчанию";
@@ -309,36 +309,36 @@
 "uploadSavedToast" = "Конфигурация сохранена";
 "uploadCurrentDefault" = "Текущий по умолчанию";
 "uploadMarkdownToggleTitle" = "Копировать как ссылку Markdown";
-"uploadMarkdownToggleSubtitle" = "Если включено, после загрузки копируется тег изображения Markdown (![](url)); если выключено — обычный URL. В истории нажмите ⌘ и щёлкните по загруженному изображению, чтобы скопировать ссылку Markdown, или просто щёлкните для обычного URL.";
+"uploadMarkdownToggleSubtitle" = "Если включено, после загрузки копируется тег изображения Markdown (![](url)); если выключено — обычный URL. В истории нажмите ⌘ и щёлкните по загруженному изображению, чтобы скопировать ссылку Markdown, или просто щёлкните для обычного URL";
 "filenameRuleTitle" = "Правила имени файла";
-"filenameRuleSubtitle" = "Управляет именами для загрузки изображений, сохранения изображений и сохранения записей. Расширения добавляются автоматически.";
-"filenameRulePresetLabel" = "Шаблон:";
+"filenameRuleSubtitle" = "Управляет именами для загрузки изображений, сохранения изображений и сохранения записей. Расширения добавляются автоматически";
+"filenameRulePresetLabel" = "Шаблон";
 "filenameRulePresetCustom" = "Свой";
 "filenameRulePresetShort" = "Короткий";
 "filenameRulePresetCompact" = "Короткая ссылка";
 "filenameRulePresetUnique" = "Без дублей";
 "filenameRulePresetCounter" = "Счётчик дня";
 "filenameRulePresetRestore" = "Сбросить";
-"filenameRuleImageLabel" = "Изображение:";
-"filenameRuleRecordingLabel" = "Запись:";
-"filenameRuleVariablesLabel" = "Переменные:";
+"filenameRuleImageLabel" = "Изображение";
+"filenameRuleRecordingLabel" = "Запись";
+"filenameRuleVariablesLabel" = "Переменные";
 "filenameRuleVariableDate" = "Дата";
 "filenameRuleVariableTime" = "Время";
 "filenameRuleVariableDaily" = "Номер дня";
 "filenameRuleVariableRandom" = "Случайно";
 "filenameRuleVariableSize" = "Размер";
-"filenameRulePreview" = "Пример: %@";
+"filenameRulePreview" = "%@";
 
 /* Upload — provider field labels */
 "uploadFieldBucket" = "Бакет";
 "uploadFieldBucketSpace" = "Бакет";
 "uploadFieldRegion" = "Регион";
-"uploadFieldRegionOptional" = "Регион (необязательно)";
-"uploadFieldPathOptional" = "Путь (необязательно)";
-"uploadFieldCustomUrlOptional" = "Свой домен (необязательно)";
+"uploadFieldRegionOptional" = "Необязательный регион";
+"uploadFieldPathOptional" = "Необязательный путь";
+"uploadFieldCustomUrlOptional" = "Необязательный домен";
 "uploadFieldPublicDomain" = "Публичный домен";
 "uploadFieldEndpointArea" = "Эндпоинт";
-"uploadFieldEndpointOptional" = "Эндпоинт (необязательно)";
+"uploadFieldEndpointOptional" = "Необязательный эндпоинт";
 "uploadFieldAccountId" = "ID аккаунта";
 "uploadTestImageFailed" = "Не удалось создать тестовое изображение";
 
@@ -349,20 +349,20 @@
 
 /* Upload — errors */
 "uploadErrMissingConfig" = "Хостинг не настроен";
-"uploadErrInvalidConfigPrefix" = "Неверная конфигурация: ";
-"uploadErrNetworkPrefix" = "Ошибка сети: ";
-"uploadErrServerPrefix" = "Не удалось загрузить (%d): ";
-"uploadErrUnexpectedResponsePrefix" = "Неожиданный ответ: ";
+"uploadErrInvalidConfigPrefix" = "Неверная конфигурация";
+"uploadErrNetworkPrefix" = "Ошибка сети";
+"uploadErrServerPrefix" = "Не удалось загрузить код %d";
+"uploadErrUnexpectedResponsePrefix" = "Неожиданный ответ";
 "missingField" = "Отсутствует %@";
 
 /* Upload — test/validation pill */
 "uploadStatusUntested" = "Не проверено";
-"uploadStatusTesting" = "Проверка…";
+"uploadStatusTesting" = "Проверка";
 "uploadStatusValid" = "Активно";
 "uploadStatusInvalid" = "Неверная конфигурация";
 
 /* Upload — log lines */
-"uploadLogStartingTest" = "Запуск тестовой загрузки…";
+"uploadLogStartingTest" = "Запуск тестовой загрузки";
 "uploadLogConfigSaved" = "Конфигурация сохранена";
 "uploadLogMissingFields" = "Отсутствуют обязательные поля: %@";
 "uploadLogTestSucceeded" = "Тестовая загрузка успешна: %@";
@@ -376,18 +376,18 @@
 
 /* OCR & Translation — result panel */
 "ocrTextHeader" = "Распознанный текст";
-"ocrRecognizing" = "Распознавание…";
+"ocrRecognizing" = "Распознавание";
 "ocrNoText" = "Текст не найден";
 "ocrCopy" = "Копировать";
 "ocrCopied" = "Скопировано";
 "ocrRetry" = "Повторить";
-"ocrTranslating" = "Перевод…";
-"ocrTranslateFailedPrefix" = "Ошибка: ";
+"ocrTranslating" = "Перевод";
+"ocrTranslateFailedPrefix" = "Ошибка";
 "ocrNoProviderTitle" = "Служба перевода не настроена";
 "ocrNoProviderHint" = "Добавьте ИИ-службу в Настройки → Перевод";
 "ocrOpenSettings" = "Открыть настройки";
 "ocrLineCopied" = "Строка скопирована";
-"copyImageTextCopying" = "Копирование…";
+"copyImageTextCopying" = "Копирование";
 "copyImageTextCopied" = "Текст с изображения скопирован";
 "copyImageTextNoText" = "Текст не найден";
 "screenshotTranslationHeader" = "Перевод";
@@ -399,27 +399,27 @@
 "dictionaryExampleLabel" = "Пример";
 "dictionaryDifficultyLabel" = "Сложность";
 "dictionaryNoProviderTitle" = "Не настроена ИИ-служба для режима словаря";
-"dictionaryNoProviderHint" = "Включите OpenAI, DeepSeek, Claude или свой OpenAI-совместимый сервис в Настройки → Перевод.";
+"dictionaryNoProviderHint" = "Включите OpenAI, DeepSeek, Claude или свой OpenAI-совместимый сервис в Настройки → Перевод";
 
 /* Translation — settings tab */
 "translationDictionaryModeTitle" = "Режим словаря";
-"translationDictionaryModeSubtitle" = "Если перевод снимка распознал одно английское слово, показывает произношение, значение, пример, перевод и уровень CEFR.";
+"translationDictionaryModeSubtitle" = "Если перевод снимка распознал одно английское слово, показывает произношение, значение, пример, перевод и уровень CEFR";
 "translationTargetLanguage" = "Язык перевода";
-"translationTargetHint" = "Распознанный текст переводится на этот язык; если он уже на этом языке, он переводится на английский.";
+"translationTargetHint" = "Распознанный текст переводится на этот язык; если он уже на этом языке, он переводится на английский";
 "translationProvidersHeader" = "ИИ-службы перевода";
 "translationApiKey" = "Ключ API";
-"translationApiKeyOptional" = "Ключ API (необязательно)";
+"translationApiKeyOptional" = "Необязательный ключ API";
 "translationModel" = "Модель";
 "translationEndpoint" = "Эндпоинт";
-"translationEndpointOptional" = "Эндпоинт (необязательно)";
+"translationEndpointOptional" = "Необязательный эндпоинт";
 "translationSave" = "Сохранить";
 "translationClear" = "Очистить";
 "translationConfigSaved" = "Конфигурация сохранена";
-"translationTesting" = "Проверка…";
+"translationTesting" = "Проверка";
 "translationTestPassed" = "Проверка пройдена";
 "translationTestFailed" = "Проверка не пройдена";
 "translationTestFailedTitle" = "Сохранено, но проверка соединения не удалась";
-"translationProviderCustom" = "Свой (совместимый с OpenAI)";
+"translationProviderCustom" = "Свой совместимый с OpenAI";
 "translationMoveUp" = "Переместить вверх";
 "translationMoveDown" = "Переместить вниз";
 
@@ -437,7 +437,7 @@
 /* Image Merge */
 "imageMergeShortcutHeader" = "Объединить изображения";
 "imageMergeShortcutDefaultDisplay" = "Не задано";
-"shortcutConflictImageMerge" = "Это сочетание уже используется для объединения изображений. Выберите другое.";
+"shortcutConflictImageMerge" = "Это сочетание уже используется для объединения изображений. Выберите другое";
 "mergeImages" = "Объединить изображения";
 "mergeEditExitHint" = "Редактируется объединенное изображение. Нажмите X, чтобы выйти";
 "imageMergeNeedTwoImages" = "Выберите в Finder не менее двух изображений для объединения";
@@ -473,13 +473,13 @@
 
 /* Save paths */
 "savePathTitle" = "Пути сохранения";
-"savePathSubtitle" = "Снимки и записи сохраняются сюда без запроса папки назначения.";
+"savePathSubtitle" = "Снимки и записи сохраняются сюда без запроса папки назначения";
 "autoRevealSavedFilesLabel" = "Показать в Finder";
-"autoRevealSavedFilesHint" = "Выбирать сохранённый снимок или запись в Finder после успешного сохранения.";
+"autoRevealSavedFilesHint" = "Выбирать сохранённый снимок или запись в Finder после успешного сохранения";
 "recordingSavePathLabel" = "Путь для записей";
 "recordingSaveFormatSettingLabel" = "Формат записи";
 "screenshotSavePathLabel" = "Путь для снимков";
-"savePathChoose" = "Выбрать...";
+"savePathChoose" = "Выбрать";
 "savePathReveal" = "Показать";
 "chooseRecordingSavePathTitle" = "Выберите путь для записей";
 "chooseScreenshotSavePathTitle" = "Выберите путь для снимков";

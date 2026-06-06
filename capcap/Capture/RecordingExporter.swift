@@ -88,15 +88,15 @@ enum RecordingExporter {
         var errorDescription: String? {
             switch self {
             case .missingVideoTrack:
-                return "The recording did not contain a video track."
+                return "The recording did not contain a video track"
             case .readerSetupFailed:
-                return "Could not prepare the recording for GIF export."
+                return "Could not prepare the recording for GIF export"
             case .readerFailed:
-                return "Could not read the recording frames."
+                return "Could not read the recording frames"
             case .noFrames:
-                return "No video frames were available for GIF export."
+                return "No video frames were available for GIF export"
             case .gifFinalizeFailed:
-                return "Could not finish writing the GIF."
+                return "Could not finish writing the GIF"
             }
         }
     }

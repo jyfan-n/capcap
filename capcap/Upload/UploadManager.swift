@@ -26,7 +26,7 @@ final class UploadManager {
             return
         }
         guard let pngData = image.pngDataPreservingBacking() else {
-            ToastWindow.show(message: L10n.uploadFailedPrefix + "PNG encode", on: screen)
+            ToastWindow.show(message: "\(L10n.uploadFailedPrefix) PNG encode", on: screen)
             return
         }
 
@@ -67,7 +67,7 @@ final class UploadManager {
                     HistoryManager.shared.add(image: image)
                     let msg = (err as? UploadError)?.errorDescription
                         ?? err.localizedDescription
-                    ToastWindow.show(message: L10n.uploadFailedPrefix + msg, on: screen)
+                    ToastWindow.show(message: "\(L10n.uploadFailedPrefix) \(msg)", on: screen)
                 }
             }
         )

@@ -1,4 +1,4 @@
-"permission_flow.panel.title" = "اسحب **%@** إلى القائمة أعلاه للسماح بـ **%@**.";
+"permission_flow.panel.title" = "اسحب **%@** إلى القائمة أعلاه للسماح بـ **%@**";
 "permission_flow.app.this_app" = "هذا التطبيق";
 "permission_flow.pane.permission" = "الإذن";
 "permission_flow.pane.app_management" = "إدارة التطبيقات";
@@ -9,9 +9,9 @@
 "permission_flow.pane.input_monitoring" = "مراقبة الإدخال";
 "permission_flow.pane.media_apple_music" = "الوسائط وApple Music";
 "permission_flow.pane.screen_recording" = "تسجيل الشاشة";
-"permission_flow.drag.description" = "اسحب هذا التطبيق إلى قائمة التفويض في إعدادات النظام.";
+"permission_flow.drag.description" = "اسحب هذا التطبيق إلى قائمة التفويض في إعدادات النظام";
 "permission_flow.drag.label" = "سحب";
 "permission_flow.button.grant" = "منح";
 "permission_flow.button.granted" = "ممنوح";
 "permission_flow.button.open" = "فتح";
-"permission_flow.button.checking" = "جاري التحقق...";
+"permission_flow.button.checking" = "جاري التحقق";

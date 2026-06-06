@@ -1,4 +1,4 @@
-"permission_flow.panel.title" = "Arraste **%@** para a lista acima para permitir **%@**.";
+"permission_flow.panel.title" = "Arraste **%@** para a lista acima para permitir **%@**";
 "permission_flow.app.this_app" = "Este app";
 "permission_flow.pane.permission" = "Permissão";
 "permission_flow.pane.app_management" = "Gerenciamento de apps";
@@ -9,9 +9,9 @@
 "permission_flow.pane.input_monitoring" = "Monitoramento de entrada";
 "permission_flow.pane.media_apple_music" = "Mídia e Apple Music";
 "permission_flow.pane.screen_recording" = "Gravação de tela";
-"permission_flow.drag.description" = "Arraste este app para a lista de autorização dos Ajustes do Sistema.";
+"permission_flow.drag.description" = "Arraste este app para a lista de autorização dos Ajustes do Sistema";
 "permission_flow.drag.label" = "Arrastar";
 "permission_flow.button.grant" = "Conceder";
 "permission_flow.button.granted" = "Concedido";
 "permission_flow.button.open" = "Abrir";
-"permission_flow.button.checking" = "Verificando...";
+"permission_flow.button.checking" = "Verificando";
