@@ -1,4 +1,5 @@
 import AppKit
+import Darwin
 
 // LSUIElement apps do not get the standard Edit menu automatically, but AppKit
 // text controls still rely on it for common key equivalents like Cmd+A/C/V/X.
@@ -24,6 +25,10 @@ private func installMinimalEditMenu(on app: NSApplication) {
     editMenuItem.submenu = editMenu
     mainMenu.addItem(editMenuItem)
     app.mainMenu = mainMenu
+}
+
+if let exitCode = AgentCommand.runIfRequested(arguments: Array(CommandLine.arguments.dropFirst())) {
+    exit(exitCode)
 }
 
 let app = NSApplication.shared
