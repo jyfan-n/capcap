@@ -413,10 +413,20 @@ class EditCanvasView: NSView {
 
     // MARK: - Undo / Redo
 
+    struct RestorableState {
+        fileprivate let annotations: [Annotation]
+        fileprivate let numberCounter: Int
+        fileprivate let selectedIndexes: Set<Int>
+        fileprivate let primarySelectedIndex: Int?
+        fileprivate let undoStack: [EditorSnapshot]
+        fileprivate let redoStack: [EditorSnapshot]
+        fileprivate let previewImage: NSImage?
+    }
+
     /// History snapshot. Annotations are value-typed (struct) so a plain
     /// array copy is a deep copy of the editor's logical state. The number
     /// counter is included so undo/redo also restores the next-badge value.
-    private struct EditorSnapshot {
+    fileprivate struct EditorSnapshot {
         let annotations: [Annotation]
         let numberCounter: Int
     }
@@ -434,6 +444,35 @@ class EditCanvasView: NSView {
 
     private func currentSnapshot() -> EditorSnapshot {
         EditorSnapshot(annotations: annotations, numberCounter: numberCounter)
+    }
+
+    func restorableState() -> RestorableState {
+        activeTextField?.commit()
+        return RestorableState(
+            annotations: annotations,
+            numberCounter: numberCounter,
+            selectedIndexes: selectedIndexes,
+            primarySelectedIndex: primarySelectedIndex,
+            undoStack: undoStack,
+            redoStack: redoStack,
+            previewImage: previewImage
+        )
+    }
+
+    func restoreState(_ state: RestorableState) {
+        cancelInFlightInteraction()
+        previewImage = state.previewImage
+        if let previewImage {
+            setFrameSize(previewImage.size)
+        }
+        annotations = state.annotations
+        numberCounter = state.numberCounter
+        undoStack = state.undoStack
+        redoStack = state.redoStack
+        setSelectedIndexes(state.selectedIndexes, primary: state.primarySelectedIndex)
+        needsDisplay = true
+        notifyHistoryStateChanged()
+        refreshCursorAtCurrentLocation()
     }
 
     private func apply(_ snapshot: EditorSnapshot) {

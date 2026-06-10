@@ -68,6 +68,22 @@ class EditWindowController {
     private var scrollCropView: ScrollCropView?
     private var scrollCropControlWindow: ScrollCropControlWindow?
 
+    var blocksHistoryNavigation: Bool {
+        isScrollCapturing || isCropping
+    }
+
+    struct RestorableState {
+        let canvasState: EditCanvasView.RestorableState
+        let beautifyState: BeautifyState
+    }
+
+    struct BeautifyState {
+        let isActive: Bool
+        let presetID: String?
+        let padding: CGFloat
+        let shadowEnabled: Bool
+    }
+
     // Drawing properties
     private var currentColor: NSColor = EditorStyleDefaults.primaryColor
     private var currentLineWidth: CGFloat = EditorStyleDefaults.standardLineWidth
@@ -1894,6 +1910,68 @@ class EditWindowController {
         } else {
             hostWindow.makeFirstResponder(canvasView)
         }
+    }
+
+    func restorableState() -> RestorableState? {
+        guard let canvasView else { return nil }
+        return RestorableState(
+            canvasState: canvasView.restorableState(),
+            beautifyState: BeautifyState(
+                isActive: isBeautifyActive,
+                presetID: currentBeautifyPreset?.id,
+                padding: currentBeautifyPadding,
+                shadowEnabled: currentBeautifyShadowEnabled
+            )
+        )
+    }
+
+    func restoreState(_ state: RestorableState) {
+        if state.beautifyState.isActive {
+            applyBeautifyState(state.beautifyState)
+        } else if isBeautifyActive {
+            deactivateBeautify()
+        }
+        canvasView?.restoreState(state.canvasState)
+        beautifyContainerView?.canvasSizeDidChange()
+        if state.beautifyState.isActive {
+            updateCanvasFrameForBeautify()
+            repositionFloatingChrome()
+        }
+        updateCanvasScrollAvailability()
+        updateEditorInteractionState()
+        updateHistoryButtons(canUndo: canvasView?.canUndo == true, canRedo: canvasView?.canRedo == true)
+    }
+
+    private func applyBeautifyState(_ state: BeautifyState) {
+        guard let canvasView, let container = beautifyContainerView else { return }
+        let preset = BeautifyPreset.preset(forID: state.presetID) ?? .defaultPreset
+
+        canvasView.beautifyCornerRadius = isWindowCapture ? nil : BeautifyRenderer.innerCornerRadius
+        container.setInnerShadowCornerRadius(
+            isWindowCapture ? WindowEffects.cornerRadiusPoints : BeautifyRenderer.innerCornerRadius
+        )
+        container.setInnerShadowInset(
+            isWindowCapture ? BeautifyRenderer.windowInnerShadowInset : 0
+        )
+        if canvasView.previewImage == nil, canvasView.externalBaseImage == nil {
+            canvasView.externalBaseImage = windowShapedBaseImage(
+                from: canvasView.resolveBaseImageForEditing()
+            )
+        }
+
+        currentBeautifyPreset = preset
+        currentBeautifyPadding = state.padding
+        currentBeautifyShadowEnabled = state.shadowEnabled
+        if preset.isWallpaper {
+            container.wallpaperImage = nil
+            loadBeautifyWallpaper(presetID: preset.id)
+        }
+        container.setBeautify(preset: preset)
+        container.setPadding(state.padding)
+        container.setShadowEnabled(state.shadowEnabled)
+        isBeautifyActive = true
+        toolbars.forEach { $0.setBeautifyActive(true) }
+        showBeautifySubToolbar(selecting: preset)
     }
 
     private func currentCompositeImage() -> NSImage? {
