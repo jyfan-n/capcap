@@ -40,11 +40,17 @@
 "clipboardImagePinShortcutHeader" = "Закрепить изображение из буфера";
 "clipboardImagePinShortcutDefaultDisplay" = "Не задано";
 "clipboardImagePinShortcutClear" = "Очистить сочетание закрепления изображения из буфера";
+"clipboardTextPinShortcutHeader" = "Закрепить текст из буфера";
+"clipboardTextPinShortcutDefaultDisplay" = "Не задано";
+"clipboardTextPinShortcutClear" = "Очистить сочетание закрепления текста из буфера";
 "selectedImagePinNoImage" = "В Finder не выбрано изображение";
 "clipboardImagePinNoImage" = "В буфере нет изображения для закрепления";
+"clipboardTextPinNoText" = "В буфере нет текста";
 "pinFromFinderHint" = "Изображение Finder закреплено, нажмите X, чтобы закрыть";
 "pinFromClipboardHint" = "Изображение из буфера закреплено, нажмите X, чтобы закрыть";
+"pinFromClipboardTextHint" = "Текст из буфера закреплен, дважды щелкните для редактирования";
 "pinToolbarEdit" = "Редактировать закрепленное изображение";
+"pinToolbarEditText" = "Редактировать текст";
 
 /* Image-edit shortcuts */
 "selectedImageEditShortcutHeader" = "Редактировать выбранное изображение";
@@ -83,6 +89,7 @@
 "shortcutConflictCountdown" = "Это сочетание клавиш уже назначено для снимка экрана с обратным отсчётом (сочетание для снимка + ⌥). Выберите другое";
 "shortcutConflictSelectedImagePin" = "Это сочетание клавиш уже назначено для закрепления выбранного изображения. Выберите другое";
 "shortcutConflictClipboardImagePin" = "Это сочетание клавиш уже назначено для закрепления изображения из буфера. Выберите другое";
+"shortcutConflictClipboardTextPin" = "Это сочетание клавиш уже назначено для закрепления текста из буфера. Выберите другое";
 "shortcutConflictClipboard" = "Это сочетание клавиш уже назначено для копирования в буфер обмена. Выберите другое";
 "shortcutConflictFileSave" = "Это сочетание клавиш уже назначено для сохранения в файл. Выберите другое";
 "shortcutConflictPreviousHistoryImage" = "Это сочетание клавиш уже назначено для предыдущего снимка из истории. Выберите другое";

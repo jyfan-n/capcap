@@ -40,11 +40,17 @@
 "clipboardImagePinShortcutHeader" = "클립보드 이미지 고정";
 "clipboardImagePinShortcutDefaultDisplay" = "설정 안 됨";
 "clipboardImagePinShortcutClear" = "클립보드 이미지 고정 단축키 지우기";
+"clipboardTextPinShortcutHeader" = "클립보드 텍스트 고정";
+"clipboardTextPinShortcutDefaultDisplay" = "설정 안 됨";
+"clipboardTextPinShortcutClear" = "클립보드 텍스트 고정 단축키 지우기";
 "selectedImagePinNoImage" = "Finder에서 선택한 이미지가 없습니다";
 "clipboardImagePinNoImage" = "클립보드에 고정할 이미지가 없습니다";
+"clipboardTextPinNoText" = "클립보드에 텍스트가 없습니다";
 "pinFromFinderHint" = "Finder 이미지를 고정했습니다. X 키를 눌러 닫기";
 "pinFromClipboardHint" = "클립보드 이미지를 고정했습니다. X 키를 눌러 닫기";
+"pinFromClipboardTextHint" = "클립보드 텍스트를 고정했습니다. 더블 클릭하여 편집";
 "pinToolbarEdit" = "고정 이미지 편집";
+"pinToolbarEditText" = "텍스트 편집";
 
 /* Image-edit shortcuts */
 "selectedImageEditShortcutHeader" = "선택 이미지 편집";
@@ -83,6 +89,7 @@
 "shortcutConflictCountdown" = "이 키 조합은 이미 카운트다운 스크린샷 단축키(스크린샷 단축키 + ⌥)에 사용되고 있습니다. 다른 조합을 선택하세요";
 "shortcutConflictSelectedImagePin" = "이 키 조합은 이미 선택 이미지 고정 단축키에 사용되고 있습니다. 다른 조합을 선택하세요";
 "shortcutConflictClipboardImagePin" = "이 키 조합은 이미 클립보드 이미지 고정 단축키에 사용되고 있습니다. 다른 조합을 선택하세요";
+"shortcutConflictClipboardTextPin" = "이 키 조합은 이미 클립보드 텍스트 고정 단축키에 사용되고 있습니다. 다른 조합을 선택하세요";
 "shortcutConflictClipboard" = "이 키 조합은 이미 클립보드에 복사 단축키에 사용되고 있습니다. 다른 조합을 선택하세요";
 "shortcutConflictFileSave" = "이 키 조합은 이미 파일로 저장 단축키에 사용되고 있습니다. 다른 조합을 선택하세요";
 "shortcutConflictPreviousHistoryImage" = "이 키 조합은 이미 이전 기록 스크린샷 단축키에 사용되고 있습니다. 다른 조합을 선택하세요";

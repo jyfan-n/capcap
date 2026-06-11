@@ -6,6 +6,7 @@ import AppKit
 enum PinSource {
     case finder
     case clipboard
+    case clipboardText
 }
 
 /// A borderless, always-on-top window that holds a pinned image. Unlike a plain
@@ -17,6 +18,11 @@ final class PinWindow: NSWindow {
     var pinSource: PinSource?
 
     override var canBecomeKey: Bool { true }
+
+    override func resignKey() {
+        super.resignKey()
+        (contentView as? TextPinContentView)?.commitTextEditingIfNeeded()
+    }
 
     override func keyDown(with event: NSEvent) {
         switch event.keyCode {
@@ -45,7 +51,7 @@ final class PinWindow: NSWindow {
         switch pinSource {
         case .finder:
             FinderSelection.clearSelection()
-        case .clipboard:
+        case .clipboard, .clipboardText:
             ClipboardImageSource.clear()
         case nil:
             break
@@ -88,6 +94,19 @@ enum PinLauncher {
         return true
     }
 
+    /// Pins plain text currently on the clipboard as an editable text view.
+    @discardableResult
+    static func pinClipboardTextIfAvailable() -> Bool {
+        guard let text = ClipboardTextSource.currentText() else {
+            ToastWindow.show(message: L10n.clipboardTextPinNoText)
+            return false
+        }
+
+        pin(text: text, source: .clipboardText)
+        ToastWindow.show(message: L10n.pinFromClipboardTextHint)
+        return true
+    }
+
     /// Creates a floating pinned window for `image`. When `origin` is nil the
     /// window is centered on the screen under the cursor. Oversized images are
     /// scaled down to fit the screen.
@@ -97,6 +116,19 @@ enum PinLauncher {
         let frameOrigin = origin ?? centeredOrigin(for: size, on: screen)
 
         makeWindow(image: image, size: size, origin: frameOrigin, source: source)
+    }
+
+    /// Creates a floating editable text pin backed by a regular AppKit text view.
+    static func pin(text: String, at origin: NSPoint? = nil, source: PinSource? = nil) {
+        let screen = activeScreen()
+        let size = TextPinLayout.size(
+            for: text,
+            maxWidth: TextPinLayout.maxWidth(on: screen)
+        )
+        let fittedSize = fittedSize(for: size, on: screen)
+        let frameOrigin = origin ?? centeredOrigin(for: fittedSize, on: screen)
+
+        makeTextWindow(text: text, size: fittedSize, origin: frameOrigin, source: source)
     }
 
     private static func pin(images: [NSImage], source: PinSource) {
@@ -136,6 +168,43 @@ enum PinLauncher {
 
         let contentView = PinContentView(frame: NSRect(origin: .zero, size: size))
         contentView.image = image
+        contentView.pinWindow = window
+        window.contentView = contentView
+
+        PinWindowManager.shared.add(window)
+        NSApp.activate(ignoringOtherApps: true)
+        window.makeKeyAndOrderFront(nil)
+        window.makeFirstResponder(contentView)
+    }
+
+    private static func makeTextWindow(
+        text: String,
+        size: NSSize,
+        origin: NSPoint,
+        source: PinSource?
+    ) {
+        let window = PinWindow(
+            contentRect: NSRect(origin: origin, size: size),
+            styleMask: [.borderless],
+            backing: .buffered,
+            defer: false
+        )
+        window.level = .floating
+        if Defaults.pinAcrossSpaces {
+            window.collectionBehavior = [.canJoinAllSpaces, .fullScreenAuxiliary]
+        }
+        window.isOpaque = false
+        window.backgroundColor = .clear
+        window.isMovableByWindowBackground = false
+        window.acceptsMouseMovedEvents = true
+        window.hasShadow = true
+        window.isReleasedWhenClosed = false
+        window.pinSource = source
+
+        let contentView = TextPinContentView(
+            text: text,
+            frame: NSRect(origin: .zero, size: size)
+        )
         contentView.pinWindow = window
         window.contentView = contentView
 
@@ -220,6 +289,502 @@ final class PinWindowManager {
 
     func remove(_ window: NSWindow) {
         windows.removeAll { $0 === window }
+    }
+}
+
+// MARK: - Text Pin
+
+private enum TextPinLayout {
+    static let font = NSFont.systemFont(ofSize: 15, weight: .regular)
+    private static let minWidth: CGFloat = 220
+    private static let maxPreferredWidth: CGFloat = 560
+    private static let minHeight: CGFloat = 72
+    private static let contentInset: CGFloat = 17
+    private static let padding = NSEdgeInsets(
+        top: contentInset,
+        left: contentInset,
+        bottom: contentInset,
+        right: contentInset
+    )
+
+    static func maxWidth(on screen: NSScreen) -> CGFloat {
+        min(maxPreferredWidth, max(minWidth, screen.visibleFrame.width - 80))
+    }
+
+    static func size(for text: String, maxWidth: CGFloat) -> NSSize {
+        let attributes = textAttributes()
+        let availableWidth = max(120, maxWidth - padding.left - padding.right)
+        let measured = (normalizedText(text) as NSString).boundingRect(
+            with: NSSize(width: availableWidth, height: CGFloat.greatestFiniteMagnitude),
+            options: [.usesLineFragmentOrigin, .usesFontLeading],
+            attributes: attributes
+        )
+        let contentWidth = min(availableWidth, max(1, ceil(measured.width)))
+        let width = ceil(min(maxWidth, max(minWidth, contentWidth + padding.left + padding.right)))
+        let wrappedWidth = max(120, width - padding.left - padding.right)
+        let wrapped = (normalizedText(text) as NSString).boundingRect(
+            with: NSSize(width: wrappedWidth, height: CGFloat.greatestFiniteMagnitude),
+            options: [.usesLineFragmentOrigin, .usesFontLeading],
+            attributes: attributes
+        )
+        let textHeight = max(1, ceil(wrapped.height))
+        let height = ceil(max(minHeight, textHeight + padding.top + padding.bottom))
+        return NSSize(width: width, height: height)
+    }
+
+    static func textFrame(in bounds: NSRect) -> NSRect {
+        NSRect(
+            x: bounds.minX + padding.left,
+            y: bounds.minY + padding.bottom,
+            width: max(1, bounds.width - padding.left - padding.right),
+            height: max(1, bounds.height - padding.top - padding.bottom)
+        )
+    }
+
+    static func normalizedText(_ text: String) -> String {
+        text.replacingOccurrences(of: "\r\n", with: "\n")
+    }
+
+    static func textAttributes() -> [NSAttributedString.Key: Any] {
+        let paragraph = NSMutableParagraphStyle()
+        paragraph.lineBreakMode = .byWordWrapping
+        paragraph.lineSpacing = 3
+        return [
+            .font: font,
+            .foregroundColor: NSColor(calibratedWhite: 0.08, alpha: 1),
+            .paragraphStyle: paragraph,
+        ]
+    }
+
+    static func configure(_ textView: NSTextView, text: String) {
+        textView.string = normalizedText(text)
+        textView.font = font
+        textView.textColor = NSColor(calibratedWhite: 0.08, alpha: 1)
+        textView.typingAttributes = textAttributes()
+        textView.textContainerInset = .zero
+        textView.textContainer?.lineFragmentPadding = 0
+        textView.textContainer?.widthTracksTextView = true
+        textView.textContainer?.containerSize = NSSize(
+            width: max(1, textView.bounds.width),
+            height: CGFloat.greatestFiniteMagnitude
+        )
+    }
+
+    static func drawBackground(in bounds: NSRect) {
+        let path = NSBezierPath(
+            roundedRect: bounds.insetBy(dx: 0.5, dy: 0.5),
+            xRadius: 10,
+            yRadius: 10
+        )
+        NSColor(calibratedWhite: 0.98, alpha: 0.97).setFill()
+        path.fill()
+        NSColor(calibratedWhite: 0.12, alpha: 0.14).setStroke()
+        path.lineWidth = 1
+        path.stroke()
+    }
+
+    static func renderImage(for text: String, size: NSSize) -> NSImage? {
+        guard size.width > 0, size.height > 0 else { return nil }
+        let image = NSImage(size: size)
+        image.lockFocus()
+        let bounds = NSRect(origin: .zero, size: size)
+        drawBackground(in: bounds)
+        (normalizedText(text) as NSString).draw(
+            with: textFrame(in: bounds),
+            options: [.usesLineFragmentOrigin, .usesFontLeading],
+            attributes: textAttributes()
+        )
+        image.unlockFocus()
+        return image
+    }
+}
+
+private final class TextPinContentView: NSView, NSTextViewDelegate {
+    weak var pinWindow: PinWindow?
+
+    private let toolbar = TextPinToolbarView()
+    private let displayTextView = TextPinDisplayTextView()
+    private var text: String
+    private var trackingArea: NSTrackingArea?
+    private var isToolbarVisible = false
+    private var isEndingTextEditing = false
+    private var committedTextDuringEditing = false
+
+    override var acceptsFirstResponder: Bool { true }
+
+    init(text: String, frame frameRect: NSRect) {
+        self.text = text
+        super.init(frame: frameRect)
+        wantsLayer = true
+        setupDisplayTextView()
+        setupToolbar()
+    }
+
+    required init?(coder: NSCoder) {
+        fatalError("init(coder:) has not been implemented")
+    }
+
+    override func draw(_ dirtyRect: NSRect) {
+        TextPinLayout.drawBackground(in: bounds)
+    }
+
+    override func layout() {
+        super.layout()
+        layoutDisplayTextView()
+        layoutToolbar()
+        refreshToolbarVisibility()
+    }
+
+    override func updateTrackingAreas() {
+        super.updateTrackingAreas()
+        if let trackingArea {
+            removeTrackingArea(trackingArea)
+            self.trackingArea = nil
+        }
+        let area = NSTrackingArea(
+            rect: bounds,
+            options: [.mouseEnteredAndExited, .mouseMoved, .activeAlways],
+            owner: self,
+            userInfo: nil
+        )
+        addTrackingArea(area)
+        trackingArea = area
+    }
+
+    override func acceptsFirstMouse(for event: NSEvent?) -> Bool {
+        true
+    }
+
+    override func mouseDown(with event: NSEvent) {
+        guard !isTextEditing else {
+            super.mouseDown(with: event)
+            return
+        }
+        window?.makeFirstResponder(self)
+        pinWindow?.performDrag(with: event)
+    }
+
+    override func mouseEntered(with event: NSEvent) {
+        super.mouseEntered(with: event)
+        updateToolbarVisibility(for: event)
+    }
+
+    override func mouseMoved(with event: NSEvent) {
+        super.mouseMoved(with: event)
+        updateToolbarVisibility(for: event)
+    }
+
+    override func mouseExited(with event: NSEvent) {
+        super.mouseExited(with: event)
+        updateToolbarVisibility(for: event)
+    }
+
+    override func viewDidMoveToWindow() {
+        super.viewDidMoveToWindow()
+        refreshToolbarVisibility()
+    }
+
+    private func setupDisplayTextView() {
+        displayTextView.isEditable = false
+        displayTextView.isSelectable = false
+        displayTextView.isRichText = false
+        displayTextView.importsGraphics = false
+        displayTextView.drawsBackground = false
+        displayTextView.insertionPointColor = NSColor(calibratedWhite: 0.08, alpha: 1)
+        displayTextView.textContainer?.widthTracksTextView = true
+        displayTextView.textContainer?.containerSize = NSSize(
+            width: max(1, bounds.width),
+            height: CGFloat.greatestFiniteMagnitude
+        )
+        displayTextView.onMouseDown = { [weak self] event in
+            self?.handleDisplayMouseDown(event)
+        }
+        displayTextView.onPointerEvent = { [weak self] event in
+            self?.updateToolbarVisibility(for: event)
+        }
+        displayTextView.onCommit = { [weak self] in self?.commitTextEditingIfNeeded() }
+        displayTextView.onCancel = { [weak self] in self?.cancelTextEditing() }
+        displayTextView.delegate = self
+        TextPinLayout.configure(displayTextView, text: text)
+        addSubview(displayTextView)
+    }
+
+    private func layoutDisplayTextView() {
+        displayTextView.frame = TextPinLayout.textFrame(in: bounds)
+        displayTextView.textContainer?.containerSize = NSSize(
+            width: max(1, displayTextView.bounds.width),
+            height: CGFloat.greatestFiniteMagnitude
+        )
+    }
+
+    private func handleDisplayMouseDown(_ event: NSEvent) {
+        if isTextEditing {
+            return
+        }
+        window?.makeFirstResponder(self)
+        if event.clickCount >= 2 {
+            beginTextEditing()
+            displayTextView.forwardEditingMouseDown(with: event)
+            return
+        }
+        pinWindow?.performDrag(with: event)
+    }
+
+    private func setupToolbar() {
+        toolbar.alphaValue = 0
+        toolbar.isHidden = true
+        toolbar.onClose = { [weak self] in
+            self?.pinWindow?.dismissClearingSource()
+        }
+        toolbar.onEdit = { [weak self] in
+            self?.editTextImage()
+        }
+        toolbar.onEditText = { [weak self] in
+            self?.beginTextEditingFromToolbar()
+        }
+        toolbar.onPointerEvent = { [weak self] event in
+            self?.updateToolbarVisibility(for: event)
+        }
+        addSubview(toolbar)
+    }
+
+    private func layoutToolbar() {
+        toolbar.frame = NSRect(
+            x: 8,
+            y: max(8, bounds.height - TextPinToolbarView.preferredHeight - 8),
+            width: TextPinToolbarView.preferredWidth,
+            height: TextPinToolbarView.preferredHeight
+        )
+    }
+
+    private var isTextEditing: Bool {
+        displayTextView.isTextEditing
+    }
+
+    private func updateToolbarVisibility(for event: NSEvent) {
+        let point = convert(event.locationInWindow, from: nil)
+        setToolbarVisible(bounds.contains(point))
+    }
+
+    private func refreshToolbarVisibility() {
+        guard let window else {
+            setToolbarVisible(false)
+            return
+        }
+        let point = convert(window.mouseLocationOutsideOfEventStream, from: nil)
+        setToolbarVisible(bounds.contains(point))
+    }
+
+    private func setToolbarVisible(_ visible: Bool) {
+        guard visible != isToolbarVisible else { return }
+        isToolbarVisible = visible
+        toolbar.isHidden = !visible
+        toolbar.alphaValue = visible ? 1 : 0
+    }
+
+    override func keyDown(with event: NSEvent) {
+        switch event.keyCode {
+        case 7:
+            pinWindow?.dismissClearingSource()
+        case 53:
+            pinWindow?.dismiss()
+        default:
+            super.keyDown(with: event)
+        }
+    }
+
+    func textDidEndEditing(_ notification: Notification) {
+        guard isTextEditing, !isEndingTextEditing, !committedTextDuringEditing else { return }
+        commitTextEditingIfNeeded()
+    }
+
+    private func beginTextEditing() {
+        guard !isTextEditing else { return }
+        committedTextDuringEditing = false
+        displayTextView.isTextEditing = true
+        displayTextView.isEditable = true
+        displayTextView.isSelectable = true
+        window?.makeFirstResponder(displayTextView)
+    }
+
+    private func beginTextEditingFromToolbar() {
+        beginTextEditing()
+        displayTextView.setSelectedRange(NSRange(location: displayTextView.string.utf16.count, length: 0))
+    }
+
+    @discardableResult
+    func commitTextEditingIfNeeded() -> Bool {
+        guard isTextEditing else { return true }
+        committedTextDuringEditing = true
+        let updatedText = displayTextView.string
+        endTextEditing()
+
+        guard !updatedText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
+            pinWindow?.dismissClearingSource()
+            return false
+        }
+
+        text = updatedText
+        updateDisplayTextAndResize()
+        return true
+    }
+
+    private func cancelTextEditing() {
+        guard isTextEditing else { return }
+        TextPinLayout.configure(displayTextView, text: text)
+        endTextEditing()
+        needsDisplay = true
+    }
+
+    private func endTextEditing() {
+        isEndingTextEditing = true
+        displayTextView.isTextEditing = false
+        displayTextView.isEditable = false
+        displayTextView.isSelectable = false
+        window?.makeFirstResponder(self)
+        isEndingTextEditing = false
+    }
+
+    private func updateDisplayTextAndResize() {
+        let screen = window?.screen ?? NSScreen.main ?? NSScreen.screens[0]
+        let targetSize = fittedSize(
+            for: TextPinLayout.size(
+                for: text,
+                maxWidth: TextPinLayout.maxWidth(on: screen)
+            ),
+            on: screen
+        )
+        resizeWindow(to: targetSize, on: screen)
+        frame = NSRect(origin: .zero, size: targetSize)
+        TextPinLayout.configure(displayTextView, text: text)
+        layoutDisplayTextView()
+        needsDisplay = true
+    }
+
+    private func resizeWindow(to targetSize: NSSize, on screen: NSScreen) {
+        guard let window else {
+            setFrameSize(targetSize)
+            return
+        }
+
+        let current = window.frame
+        var targetFrame = NSRect(
+            x: current.minX,
+            y: current.maxY - targetSize.height,
+            width: targetSize.width,
+            height: targetSize.height
+        )
+        targetFrame = clampedFrame(targetFrame, on: screen)
+        window.setFrame(targetFrame, display: true, animate: false)
+    }
+
+    private func fittedSize(for size: NSSize, on screen: NSScreen) -> NSSize {
+        guard size.width > 0, size.height > 0 else { return size }
+        let frame = screen.visibleFrame
+        let maxWidth = max(200, frame.width - 80)
+        let maxHeight = max(200, frame.height - 80)
+        let ratio = min(1.0, min(maxWidth / size.width, maxHeight / size.height))
+        if ratio >= 1.0 { return size }
+        return NSSize(width: floor(size.width * ratio), height: floor(size.height * ratio))
+    }
+
+    private func clampedFrame(_ frame: NSRect, on screen: NSScreen) -> NSRect {
+        let visible = screen.visibleFrame
+        var result = frame
+        result.origin.x = min(max(result.minX, visible.minX), max(visible.minX, visible.maxX - result.width))
+        result.origin.y = min(max(result.minY, visible.minY), max(visible.minY, visible.maxY - result.height))
+        return result
+    }
+
+    private func editTextImage() {
+        guard commitTextEditingIfNeeded() else { return }
+        guard let pinWindow,
+              let appDelegate = NSApp.delegate as? AppDelegate,
+              let image = TextPinLayout.renderImage(for: text, size: bounds.size)
+        else { return }
+
+        appDelegate.handlePinnedImageEditRequest(image) {
+            pinWindow.dismiss()
+        }
+    }
+}
+
+private final class TextPinDisplayTextView: NSTextView {
+    var onMouseDown: ((NSEvent) -> Void)?
+    var onPointerEvent: ((NSEvent) -> Void)?
+    var onCommit: (() -> Void)?
+    var onCancel: (() -> Void)?
+    var isTextEditing = false
+    private var trackingArea: NSTrackingArea?
+
+    override var acceptsFirstResponder: Bool { isTextEditing }
+
+    override func updateTrackingAreas() {
+        super.updateTrackingAreas()
+        if let trackingArea {
+            removeTrackingArea(trackingArea)
+            self.trackingArea = nil
+        }
+
+        let area = NSTrackingArea(
+            rect: bounds,
+            options: [.mouseEnteredAndExited, .mouseMoved, .activeAlways, .inVisibleRect],
+            owner: self,
+            userInfo: nil
+        )
+        addTrackingArea(area)
+        trackingArea = area
+    }
+
+    override func acceptsFirstMouse(for event: NSEvent?) -> Bool {
+        true
+    }
+
+    override func mouseEntered(with event: NSEvent) {
+        super.mouseEntered(with: event)
+        onPointerEvent?(event)
+    }
+
+    override func mouseMoved(with event: NSEvent) {
+        super.mouseMoved(with: event)
+        onPointerEvent?(event)
+    }
+
+    override func mouseExited(with event: NSEvent) {
+        super.mouseExited(with: event)
+        onPointerEvent?(event)
+    }
+
+    override func mouseDown(with event: NSEvent) {
+        onPointerEvent?(event)
+        guard !isTextEditing else {
+            super.mouseDown(with: event)
+            return
+        }
+        onMouseDown?(event)
+    }
+
+    override func keyDown(with event: NSEvent) {
+        guard isTextEditing else {
+            super.keyDown(with: event)
+            return
+        }
+
+        let modifiers = event.modifierFlags.intersection(.deviceIndependentFlagsMask)
+        if event.keyCode == 53, modifiers.isEmpty {
+            onCancel?()
+            return
+        }
+        if (event.keyCode == 36 || event.keyCode == 76), modifiers == .command {
+            onCommit?()
+            return
+        }
+        super.keyDown(with: event)
+    }
+
+    func forwardEditingMouseDown(with event: NSEvent) {
+        guard isTextEditing else { return }
+        super.mouseDown(with: event)
     }
 }
 
@@ -1572,5 +2137,146 @@ private final class PinToolbarMoveButton: PinToolbarIconButton {
 
     override func mouseDown(with event: NSEvent) {
         onMouseDown?(event)
+    }
+}
+
+private final class TextPinToolbarView: NSView {
+    static let preferredWidth: CGFloat = 106
+    static let preferredHeight: CGFloat = 34
+
+    var onClose: (() -> Void)?
+    var onEdit: (() -> Void)?
+    var onEditText: (() -> Void)?
+    var onPointerEvent: ((NSEvent) -> Void)?
+
+    private let closeButton = PinToolbarIconButton(symbolName: "xmark", accessibilityLabel: L10n.imageMergeClose)
+    private let textEditButton = PinToolbarIconButton(symbolName: "textformat", accessibilityLabel: L10n.pinToolbarEditText)
+    private let editButton = PinToolbarIconButton(symbolName: "pencil", accessibilityLabel: L10n.pinToolbarEdit)
+    private var trackingArea: NSTrackingArea?
+
+    override init(frame frameRect: NSRect) {
+        super.init(frame: frameRect)
+        setup()
+    }
+
+    required init?(coder: NSCoder) {
+        fatalError("init(coder:) has not been implemented")
+    }
+
+    private func setup() {
+        wantsLayer = true
+        layer?.masksToBounds = false
+
+        closeButton.toolTip = L10n.imageMergeClose
+        closeButton.target = self
+        closeButton.action = #selector(closeTapped)
+        textEditButton.toolTip = L10n.pinToolbarEditText
+        textEditButton.target = self
+        textEditButton.action = #selector(editTextTapped)
+        editButton.toolTip = L10n.pinToolbarEdit
+        editButton.target = self
+        editButton.action = #selector(editTapped)
+
+        addSubview(closeButton)
+        addSubview(textEditButton)
+        addSubview(editButton)
+    }
+
+    override func updateTrackingAreas() {
+        super.updateTrackingAreas()
+        if let trackingArea {
+            removeTrackingArea(trackingArea)
+            self.trackingArea = nil
+        }
+
+        let area = NSTrackingArea(
+            rect: bounds,
+            options: [.mouseEnteredAndExited, .mouseMoved, .activeAlways, .inVisibleRect],
+            owner: self,
+            userInfo: nil
+        )
+        addTrackingArea(area)
+        trackingArea = area
+    }
+
+    override func layout() {
+        super.layout()
+
+        let buttonSide = min(28, max(22, bounds.height - 6))
+        let buttonY = (bounds.height - buttonSide) / 2
+        let horizontalInset: CGFloat = 4
+        let gap = max(4, (bounds.width - horizontalInset * 2 - buttonSide * 3) / 2)
+
+        closeButton.frame = NSRect(
+            x: horizontalInset,
+            y: buttonY,
+            width: buttonSide,
+            height: buttonSide
+        )
+        textEditButton.frame = NSRect(
+            x: closeButton.frame.maxX + gap,
+            y: buttonY,
+            width: buttonSide,
+            height: buttonSide
+        )
+        editButton.frame = NSRect(
+            x: textEditButton.frame.maxX + gap,
+            y: buttonY,
+            width: buttonSide,
+            height: buttonSide
+        )
+    }
+
+    override func draw(_ dirtyRect: NSRect) {
+        let path = NSBezierPath(
+            roundedRect: bounds.insetBy(dx: 0.5, dy: 0.5),
+            xRadius: bounds.height / 2,
+            yRadius: bounds.height / 2
+        )
+        NSColor(white: 0.08, alpha: 0.78).setFill()
+        path.fill()
+
+        NSColor.white.withAlphaComponent(0.18).setStroke()
+        path.lineWidth = 1
+        path.stroke()
+    }
+
+    override func acceptsFirstMouse(for event: NSEvent?) -> Bool {
+        true
+    }
+
+    override func mouseEntered(with event: NSEvent) {
+        super.mouseEntered(with: event)
+        onPointerEvent?(event)
+    }
+
+    override func mouseMoved(with event: NSEvent) {
+        super.mouseMoved(with: event)
+        onPointerEvent?(event)
+    }
+
+    override func mouseExited(with event: NSEvent) {
+        super.mouseExited(with: event)
+        onPointerEvent?(event)
+    }
+
+    override func mouseDown(with event: NSEvent) {
+        onPointerEvent?(event)
+    }
+
+    override func mouseDragged(with event: NSEvent) {}
+
+    override func mouseUp(with event: NSEvent) {}
+
+    @objc private func closeTapped() {
+        onClose?()
+    }
+
+    @objc private func editTextTapped() {
+        onEditText?()
+    }
+
+    @objc private func editTapped() {
+        onEdit?()
     }
 }

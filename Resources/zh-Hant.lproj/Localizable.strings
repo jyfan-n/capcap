@@ -40,11 +40,17 @@
 "clipboardImagePinShortcutHeader" = "釘選剪貼簿圖片";
 "clipboardImagePinShortcutDefaultDisplay" = "未設定";
 "clipboardImagePinShortcutClear" = "清除釘選剪貼簿圖片快捷鍵";
+"clipboardTextPinShortcutHeader" = "釘選剪貼簿文字";
+"clipboardTextPinShortcutDefaultDisplay" = "未設定";
+"clipboardTextPinShortcutClear" = "清除釘選剪貼簿文字快捷鍵";
 "selectedImagePinNoImage" = "Finder 中沒有選取圖片";
 "clipboardImagePinNoImage" = "剪貼簿中沒有圖片";
+"clipboardTextPinNoText" = "剪貼簿中沒有文字";
 "pinFromFinderHint" = "已釘選 Finder 中的圖片，按 X 關閉";
 "pinFromClipboardHint" = "已釘選剪貼簿圖片，按 X 關閉";
+"pinFromClipboardTextHint" = "已釘選剪貼簿文字，雙擊可編輯";
 "pinToolbarEdit" = "編輯釘圖";
+"pinToolbarEditText" = "編輯文字";
 
 /* Image-edit shortcuts */
 "selectedImageEditShortcutHeader" = "編輯所選圖片";
@@ -83,6 +89,7 @@
 "shortcutConflictCountdown" = "這組按鍵已用於倒數截圖快捷鍵（截圖快捷鍵 + ⌥）。請選擇其他組合";
 "shortcutConflictSelectedImagePin" = "這組按鍵已用於釘選所選圖片快捷鍵。請選擇其他組合";
 "shortcutConflictClipboardImagePin" = "這組按鍵已用於釘選剪貼簿圖片快捷鍵。請選擇其他組合";
+"shortcutConflictClipboardTextPin" = "這組按鍵已用於釘選剪貼簿文字快捷鍵，請選擇其他組合";
 "shortcutConflictClipboard" = "這組按鍵已用於複製到剪貼簿快捷鍵。請選擇其他組合";
 "shortcutConflictFileSave" = "這組按鍵已用於儲存為檔案快捷鍵。請選擇其他組合";
 "shortcutConflictPreviousHistoryImage" = "這組按鍵已用於上一張歷史截圖快捷鍵。請選擇其他組合";

@@ -40,11 +40,17 @@
 "clipboardImagePinShortcutHeader" = "Ghim ảnh từ clipboard";
 "clipboardImagePinShortcutDefaultDisplay" = "Chưa đặt";
 "clipboardImagePinShortcutClear" = "Xóa phím tắt ghim ảnh từ clipboard";
+"clipboardTextPinShortcutHeader" = "Ghim văn bản từ clipboard";
+"clipboardTextPinShortcutDefaultDisplay" = "Chưa đặt";
+"clipboardTextPinShortcutClear" = "Xóa phím tắt ghim văn bản từ clipboard";
 "selectedImagePinNoImage" = "Chưa chọn ảnh trong Finder";
 "clipboardImagePinNoImage" = "Không có ảnh trong clipboard";
+"clipboardTextPinNoText" = "Clipboard không có văn bản";
 "pinFromFinderHint" = "Đã ghim ảnh từ Finder, nhấn X để đóng";
 "pinFromClipboardHint" = "Đã ghim ảnh từ clipboard, nhấn X để đóng";
+"pinFromClipboardTextHint" = "Đã ghim văn bản từ clipboard, bấm đúp để sửa";
 "pinToolbarEdit" = "Sửa ảnh đã ghim";
+"pinToolbarEditText" = "Sửa văn bản";
 
 /* Image-edit shortcuts */
 "selectedImageEditShortcutHeader" = "Chỉnh sửa ảnh đã chọn";
@@ -83,6 +89,7 @@
 "shortcutConflictCountdown" = "Tổ hợp phím này đã được dùng cho phím tắt chụp màn hình đếm ngược (phím tắt chụp màn hình + ⌥). Vui lòng chọn tổ hợp khác";
 "shortcutConflictSelectedImagePin" = "Tổ hợp phím này đã được dùng cho phím tắt ghim ảnh đã chọn. Vui lòng chọn tổ hợp khác";
 "shortcutConflictClipboardImagePin" = "Tổ hợp phím này đã được dùng cho phím tắt ghim ảnh từ clipboard. Vui lòng chọn tổ hợp khác";
+"shortcutConflictClipboardTextPin" = "Tổ hợp phím này đã được dùng cho phím tắt ghim văn bản từ clipboard. Vui lòng chọn tổ hợp khác";
 "shortcutConflictClipboard" = "Tổ hợp phím này đã được dùng cho phím tắt sao chép vào clipboard. Vui lòng chọn tổ hợp khác";
 "shortcutConflictFileSave" = "Tổ hợp phím này đã được dùng cho phím tắt lưu vào tệp. Vui lòng chọn tổ hợp khác";
 "shortcutConflictPreviousHistoryImage" = "Tổ hợp phím này đã được dùng cho phím tắt ảnh chụp lịch sử trước. Vui lòng chọn tổ hợp khác";

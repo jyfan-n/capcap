@@ -40,11 +40,17 @@
 "clipboardImagePinShortcutHeader" = "Pin Clipboard Image";
 "clipboardImagePinShortcutDefaultDisplay" = "Not set";
 "clipboardImagePinShortcutClear" = "Clear Pin Clipboard Image Shortcut";
+"clipboardTextPinShortcutHeader" = "Pin Clipboard Text";
+"clipboardTextPinShortcutDefaultDisplay" = "Not set";
+"clipboardTextPinShortcutClear" = "Clear Pin Clipboard Text Shortcut";
 "selectedImagePinNoImage" = "No Finder image selected";
 "clipboardImagePinNoImage" = "No image on the clipboard";
+"clipboardTextPinNoText" = "No text on the clipboard";
 "pinFromFinderHint" = "Pinned Finder image, press X to close";
 "pinFromClipboardHint" = "Pinned clipboard image, press X to close";
+"pinFromClipboardTextHint" = "Pinned clipboard text, double-click to edit";
 "pinToolbarEdit" = "Edit pinned image";
+"pinToolbarEditText" = "Edit text";
 
 /* Image-edit shortcuts */
 "selectedImageEditShortcutHeader" = "Edit Selected Image";
@@ -83,6 +89,7 @@
 "shortcutConflictCountdown" = "This key combination is already used by the countdown screenshot shortcut (screenshot shortcut + ⌥). Please choose a different one";
 "shortcutConflictSelectedImagePin" = "This key combination is already used by the Pin Selected Image shortcut. Please choose a different one";
 "shortcutConflictClipboardImagePin" = "This key combination is already used by the Pin Clipboard Image shortcut. Please choose a different one";
+"shortcutConflictClipboardTextPin" = "This key combination is already used by the Pin Clipboard Text shortcut. Please choose a different one";
 "shortcutConflictClipboard" = "This key combination is already used by the Copy to Clipboard shortcut. Please choose a different one";
 "shortcutConflictFileSave" = "This key combination is already used by the Save to File shortcut. Please choose a different one";
 "shortcutConflictPreviousHistoryImage" = "This key combination is already used by the Previous History Screenshot shortcut. Please choose a different one";

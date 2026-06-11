@@ -11,6 +11,7 @@ final class HotkeyManager {
     private var countdownHotKeyRef: EventHotKeyRef?
     private var selectedImagePinHotKeyRef: EventHotKeyRef?
     private var clipboardImagePinHotKeyRef: EventHotKeyRef?
+    private var clipboardTextPinHotKeyRef: EventHotKeyRef?
     private var selectedImageEditHotKeyRef: EventHotKeyRef?
     private var clipboardImageEditHotKeyRef: EventHotKeyRef?
     private var textRecognitionHotKeyRef: EventHotKeyRef?
@@ -24,6 +25,7 @@ final class HotkeyManager {
     private var countdownCallback: (() -> Void)?
     private var selectedImagePinCallback: (() -> Void)?
     private var clipboardImagePinCallback: (() -> Void)?
+    private var clipboardTextPinCallback: (() -> Void)?
     private var selectedImageEditCallback: (() -> Void)?
     private var clipboardImageEditCallback: (() -> Void)?
     private var textRecognitionCallback: (() -> Void)?
@@ -49,6 +51,7 @@ final class HotkeyManager {
     private static let fullScreenScreenshotHotKeyID: UInt32 = 11
     private static let colorPickerHotKeyID: UInt32 = 12
     private static let copyImageTextHotKeyID: UInt32 = 13
+    private static let clipboardTextPinHotKeyID: UInt32 = 14
 
     private init() {}
 
@@ -57,6 +60,7 @@ final class HotkeyManager {
         unregisterCountdown()
         unregisterSelectedImagePin()
         unregisterClipboardImagePin()
+        unregisterClipboardTextPin()
         unregisterSelectedImageEdit()
         unregisterClipboardImageEdit()
         unregisterTextRecognition()
@@ -180,6 +184,33 @@ final class HotkeyManager {
         if let ref = clipboardImagePinHotKeyRef {
             UnregisterEventHotKey(ref)
             clipboardImagePinHotKeyRef = nil
+        }
+    }
+
+    /// Register the saved clipboard-text pin hotkey, if any. Caller's
+    /// `callback` fires when it is pressed. No-ops when unset.
+    func registerClipboardTextPin(callback: @escaping () -> Void) {
+        self.clipboardTextPinCallback = callback
+        unregisterClipboardTextPin()
+
+        guard let (keyCode, modifiers) = currentClipboardTextPinHotkey() else { return }
+
+        installEventHandlerIfNeeded()
+        var ref: EventHotKeyRef?
+        let id = EventHotKeyID(signature: Self.regularHotKeySignature, id: Self.clipboardTextPinHotKeyID)
+        let status = RegisterEventHotKey(
+            keyCode, modifiers, id,
+            GetApplicationEventTarget(), 0, &ref
+        )
+        if status == noErr, let ref = ref {
+            clipboardTextPinHotKeyRef = ref
+        }
+    }
+
+    func unregisterClipboardTextPin() {
+        if let ref = clipboardTextPinHotKeyRef {
+            UnregisterEventHotKey(ref)
+            clipboardTextPinHotKeyRef = nil
         }
     }
 
@@ -437,6 +468,7 @@ final class HotkeyManager {
         unregisterCountdown()
         unregisterSelectedImagePin()
         unregisterClipboardImagePin()
+        unregisterClipboardTextPin()
         unregisterSelectedImageEdit()
         unregisterClipboardImageEdit()
         unregisterTextRecognition()
@@ -506,6 +538,24 @@ final class HotkeyManager {
     /// nil if not set.
     static func currentClipboardImagePinDisplayString() -> String? {
         guard let (kc, mods) = HotkeyManager.shared.currentClipboardImagePinHotkey() else { return nil }
+        return modifierString(mods) + keyString(kc)
+    }
+
+    /// Returns (keyCode, carbonModifiers) for the saved clipboard-text pin
+    /// hotkey, or nil.
+    func currentClipboardTextPinHotkey() -> (keyCode: UInt32, modifiers: UInt32)? {
+        guard Defaults.hasCustomClipboardTextPinHotkey else { return nil }
+        let kc = UInt32(Defaults.clipboardTextPinHotkeyKeyCode)
+        let mods = UInt32(Defaults.clipboardTextPinHotkeyModifiers)
+        // Require at least one modifier unless it is a standalone function key.
+        guard mods != 0 || Self.isFunctionKey(kc) else { return nil }
+        return (kc, mods)
+    }
+
+    /// Display string like "⌘⇧T" for the saved clipboard-text pin hotkey, or
+    /// nil if not set.
+    static func currentClipboardTextPinDisplayString() -> String? {
+        guard let (kc, mods) = HotkeyManager.shared.currentClipboardTextPinHotkey() else { return nil }
         return modifierString(mods) + keyString(kc)
     }
 
@@ -754,6 +804,7 @@ final class HotkeyManager {
         case screenshot
         case selectedImagePin
         case clipboardImagePin
+        case clipboardTextPin
         case selectedImageEdit
         case clipboardImageEdit
         case textRecognition
@@ -808,6 +859,15 @@ final class HotkeyManager {
             if slot == .screenshot, modifiers & UInt32(optionKey) == 0,
                kc == keyCode, m == modifiers | UInt32(optionKey) {
                 return L10n.shortcutConflictClipboardImagePin
+            }
+        }
+        if slot != .clipboardTextPin, let (kc, m) = currentClipboardTextPinHotkey() {
+            if kc == keyCode, m == modifiers {
+                return L10n.shortcutConflictClipboardTextPin
+            }
+            if slot == .screenshot, modifiers & UInt32(optionKey) == 0,
+               kc == keyCode, m == modifiers | UInt32(optionKey) {
+                return L10n.shortcutConflictClipboardTextPin
             }
         }
         if slot != .selectedImageEdit,
@@ -981,6 +1041,8 @@ final class HotkeyManager {
                     callback = mgr.selectedImagePinCallback
                 case HotkeyManager.clipboardImagePinHotKeyID:
                     callback = mgr.clipboardImagePinCallback
+                case HotkeyManager.clipboardTextPinHotKeyID:
+                    callback = mgr.clipboardTextPinCallback
                 case HotkeyManager.selectedImageEditHotKeyID:
                     callback = mgr.selectedImageEditCallback
                 case HotkeyManager.clipboardImageEditHotKeyID:

@@ -148,6 +148,14 @@ class AppDelegate: NSObject, NSApplicationDelegate {
             HotkeyManager.shared.unregisterClipboardImagePin()
         }
 
+        if Defaults.hasCustomClipboardTextPinHotkey {
+            HotkeyManager.shared.registerClipboardTextPin { [weak self] in
+                self?.handleClipboardTextPinTrigger()
+            }
+        } else {
+            HotkeyManager.shared.unregisterClipboardTextPin()
+        }
+
         if Defaults.hasCustomSelectedImageEditHotkey {
             HotkeyManager.shared.registerSelectedImageEdit { [weak self] in
                 self?.handleSelectedImageEditTrigger()
@@ -224,6 +232,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     private func unregisterNonScreenshotHotkeys() {
         HotkeyManager.shared.unregisterSelectedImagePin()
         HotkeyManager.shared.unregisterClipboardImagePin()
+        HotkeyManager.shared.unregisterClipboardTextPin()
         HotkeyManager.shared.unregisterSelectedImageEdit()
         HotkeyManager.shared.unregisterClipboardImageEdit()
         HotkeyManager.shared.unregisterTextRecognition()
@@ -356,6 +365,13 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     func handleClipboardImagePinTrigger() {
         guard overlayController == nil, recordingEngine == nil else { return }
         PinLauncher.pinClipboardImageIfAvailable()
+    }
+
+    /// Pin-hotkey trigger: render clipboard text into a desktop text pin.
+    /// Skipped while a capture overlay is up.
+    func handleClipboardTextPinTrigger() {
+        guard overlayController == nil, recordingEngine == nil else { return }
+        PinLauncher.pinClipboardTextIfAvailable()
     }
 
     func handleSelectedImageEditTrigger() {

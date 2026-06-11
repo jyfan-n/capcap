@@ -72,3 +72,14 @@ enum ClipboardImageSource {
         return type.conforms(to: .image)
     }
 }
+
+enum ClipboardTextSource {
+    static func currentText() -> String? {
+        guard let text = NSPasteboard.general.string(forType: .string),
+              !text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+        else {
+            return nil
+        }
+        return text
+    }
+}

@@ -129,11 +129,17 @@ enum L10n {
     static var clipboardImagePinShortcutHeader: String { s("clipboardImagePinShortcutHeader") }
     static var clipboardImagePinShortcutDefaultDisplay: String { s("clipboardImagePinShortcutDefaultDisplay") }
     static var clipboardImagePinShortcutClear: String { s("clipboardImagePinShortcutClear") }
+    static var clipboardTextPinShortcutHeader: String { s("clipboardTextPinShortcutHeader") }
+    static var clipboardTextPinShortcutDefaultDisplay: String { s("clipboardTextPinShortcutDefaultDisplay") }
+    static var clipboardTextPinShortcutClear: String { s("clipboardTextPinShortcutClear") }
     static var selectedImagePinNoImage: String { s("selectedImagePinNoImage") }
     static var clipboardImagePinNoImage: String { s("clipboardImagePinNoImage") }
+    static var clipboardTextPinNoText: String { s("clipboardTextPinNoText") }
     static var pinFromFinderHint: String { s("pinFromFinderHint") }
     static var pinFromClipboardHint: String { s("pinFromClipboardHint") }
+    static var pinFromClipboardTextHint: String { s("pinFromClipboardTextHint") }
     static var pinToolbarEdit: String { s("pinToolbarEdit") }
+    static var pinToolbarEditText: String { s("pinToolbarEditText") }
 
     // Image-edit shortcuts
     static var selectedImageEditShortcutHeader: String { s("selectedImageEditShortcutHeader") }
@@ -176,6 +182,7 @@ enum L10n {
     static var shortcutConflictCountdown: String { s("shortcutConflictCountdown") }
     static var shortcutConflictSelectedImagePin: String { s("shortcutConflictSelectedImagePin") }
     static var shortcutConflictClipboardImagePin: String { s("shortcutConflictClipboardImagePin") }
+    static var shortcutConflictClipboardTextPin: String { s("shortcutConflictClipboardTextPin") }
     static var shortcutConflictClipboard: String { s("shortcutConflictClipboard") }
     static var shortcutConflictFileSave: String { s("shortcutConflictFileSave") }
     static var shortcutConflictPreviousHistoryImage: String { s("shortcutConflictPreviousHistoryImage") }
@@ -707,11 +714,31 @@ struct Defaults {
         defaults.removeObject(forKey: "clipboardImagePinHotkeyModifiers")
     }
 
+    static var clipboardTextPinHotkeyKeyCode: Int {
+        get { defaults.integer(forKey: "clipboardTextPinHotkeyKeyCode") }
+        set { defaults.set(newValue, forKey: "clipboardTextPinHotkeyKeyCode") }
+    }
+
+    static var clipboardTextPinHotkeyModifiers: Int {
+        get { defaults.integer(forKey: "clipboardTextPinHotkeyModifiers") }
+        set { defaults.set(newValue, forKey: "clipboardTextPinHotkeyModifiers") }
+    }
+
+    static var hasCustomClipboardTextPinHotkey: Bool {
+        defaults.object(forKey: "clipboardTextPinHotkeyKeyCode") != nil
+    }
+
+    static func clearClipboardTextPinHotkey() {
+        defaults.removeObject(forKey: "clipboardTextPinHotkeyKeyCode")
+        defaults.removeObject(forKey: "clipboardTextPinHotkeyModifiers")
+    }
+
     static func resetShortcutHotkeysToDefaults() {
         clearScreenshotHotkey()
         clearLegacyPinHotkey()
         clearSelectedImagePinHotkey()
         clearClipboardImagePinHotkey()
+        clearClipboardTextPinHotkey()
         clearSelectedImageEditHotkey()
         clearClipboardImageEditHotkey()
         clearTextRecognitionHotkey()

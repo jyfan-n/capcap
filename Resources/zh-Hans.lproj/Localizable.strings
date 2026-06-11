@@ -40,11 +40,17 @@
 "clipboardImagePinShortcutHeader" = "钉起剪贴板图片";
 "clipboardImagePinShortcutDefaultDisplay" = "未设置";
 "clipboardImagePinShortcutClear" = "清除钉起剪贴板图片快捷键";
+"clipboardTextPinShortcutHeader" = "钉起剪贴板文本";
+"clipboardTextPinShortcutDefaultDisplay" = "未设置";
+"clipboardTextPinShortcutClear" = "清除钉起剪贴板文本快捷键";
 "selectedImagePinNoImage" = "未找到 Finder 中选中的图片";
 "clipboardImagePinNoImage" = "剪贴板里没有可钉起的图片";
+"clipboardTextPinNoText" = "剪贴板里没有文本";
 "pinFromFinderHint" = "已钉起 Finder 选中的图片，按 X 关闭";
 "pinFromClipboardHint" = "已钉起剪贴板图片，按 X 关闭";
+"pinFromClipboardTextHint" = "已钉起剪贴板文本，双击可编辑";
 "pinToolbarEdit" = "编辑钉图";
+"pinToolbarEditText" = "编辑文字";
 
 /* Image-edit shortcuts */
 "selectedImageEditShortcutHeader" = "编辑选中图片";
@@ -83,6 +89,7 @@
 "shortcutConflictCountdown" = "该按键组合已被倒计时截图快捷键（截图快捷键 + ⌥）占用，请换一个";
 "shortcutConflictSelectedImagePin" = "该按键组合已被钉起选中图片快捷键占用，请换一个";
 "shortcutConflictClipboardImagePin" = "该按键组合已被钉起剪贴板图片快捷键占用，请换一个";
+"shortcutConflictClipboardTextPin" = "该按键组合已被钉起剪贴板文本快捷键占用，请换一个";
 "shortcutConflictClipboard" = "该按键组合已被复制到剪贴板快捷键占用，请换一个";
 "shortcutConflictFileSave" = "该按键组合已被保存到文件快捷键占用，请换一个";
 "shortcutConflictPreviousHistoryImage" = "该按键组合已被上一张历史截图快捷键占用，请换一个";

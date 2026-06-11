@@ -40,11 +40,17 @@
 "clipboardImagePinShortcutHeader" = "Épingler l'image du presse-papiers";
 "clipboardImagePinShortcutDefaultDisplay" = "Non défini";
 "clipboardImagePinShortcutClear" = "Effacer le raccourci d'épinglage du presse-papiers";
+"clipboardTextPinShortcutHeader" = "Épingler le texte du presse-papiers";
+"clipboardTextPinShortcutDefaultDisplay" = "Non défini";
+"clipboardTextPinShortcutClear" = "Effacer le raccourci d'épinglage du texte du presse-papiers";
 "selectedImagePinNoImage" = "Aucune image Finder sélectionnée";
 "clipboardImagePinNoImage" = "Aucune image à épingler dans le presse-papiers";
+"clipboardTextPinNoText" = "Aucun texte dans le presse-papiers";
 "pinFromFinderHint" = "Image Finder épinglée, appuyez sur X pour fermer";
 "pinFromClipboardHint" = "Image du presse-papiers épinglée, appuyez sur X pour fermer";
+"pinFromClipboardTextHint" = "Texte du presse-papiers épinglé, double-cliquez pour modifier";
 "pinToolbarEdit" = "Modifier l'image épinglée";
+"pinToolbarEditText" = "Modifier le texte";
 
 /* Image-edit shortcuts */
 "selectedImageEditShortcutHeader" = "Modifier l'image sélectionnée";
@@ -83,6 +89,7 @@
 "shortcutConflictCountdown" = "Cette combinaison de touches est déjà utilisée par le raccourci de capture avec compte à rebours (raccourci de capture + ⌥). Veuillez en choisir une autre";
 "shortcutConflictSelectedImagePin" = "Cette combinaison de touches est déjà utilisée par le raccourci d'épinglage de l'image sélectionnée. Veuillez en choisir une autre";
 "shortcutConflictClipboardImagePin" = "Cette combinaison de touches est déjà utilisée par le raccourci d'épinglage de l'image du presse-papiers. Veuillez en choisir une autre";
+"shortcutConflictClipboardTextPin" = "Cette combinaison de touches est déjà utilisée par le raccourci d'épinglage du texte du presse-papiers. Veuillez en choisir une autre";
 "shortcutConflictClipboard" = "Cette combinaison de touches est déjà utilisée par le raccourci de copie dans le presse-papiers. Veuillez en choisir une autre";
 "shortcutConflictFileSave" = "Cette combinaison de touches est déjà utilisée par le raccourci d'enregistrement dans un fichier. Veuillez en choisir une autre";
 "shortcutConflictPreviousHistoryImage" = "Cette combinaison de touches est déjà utilisée par le raccourci Capture précédente de l'historique. Veuillez en choisir une autre";
