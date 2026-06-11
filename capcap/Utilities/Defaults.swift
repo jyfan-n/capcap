@@ -315,6 +315,7 @@ enum L10n {
     static var shapeFillOpaque: String { s("shapeFillOpaque") }
     static var shapeFillTranslucent: String { s("shapeFillTranslucent") }
     static var shapeStyleStandard: String { s("shapeStyleStandard") }
+    static var shapeStyleRounded: String { s("shapeStyleRounded") }
     static var shapeStyleHandDrawn: String { s("shapeStyleHandDrawn") }
 
     // Insert tools

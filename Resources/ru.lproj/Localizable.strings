@@ -200,6 +200,7 @@
 "shapeFillOpaque" = "Заливка";
 "shapeFillTranslucent" = "Полупрозрачная заливка";
 "shapeStyleStandard" = "Обычный стиль";
+"shapeStyleRounded" = "Скруглённый прямоугольник";
 "shapeStyleHandDrawn" = "Рисованный скруглённый стиль";
 "insertImageFromClipboard" = "Из буфера обмена";
 "insertImageFromFile" = "Из файла";

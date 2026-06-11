@@ -106,6 +106,7 @@ enum ShapeFillMode: String, CaseIterable {
 
 enum ShapeStrokeStyle: String, CaseIterable {
     case standard
+    case rounded
     case handDrawn
 }
 
@@ -187,6 +188,9 @@ private enum ShapeDrawing {
         switch strokeStyle {
         case .standard:
             context.fill(rect)
+        case .rounded:
+            context.addPath(roundedRectPath(rect, lineWidth: lineWidth))
+            context.fillPath()
         case .handDrawn:
             context.addPath(roughRoundedRectPath(rect, lineWidth: lineWidth, style: roughStyle, pass: 0))
             context.fillPath()
@@ -199,7 +203,7 @@ private enum ShapeDrawing {
         context.saveGState()
         context.setFillColor(color.withAlphaComponent(fillMode.alpha).cgColor)
         switch strokeStyle {
-        case .standard:
+        case .standard, .rounded:
             context.fillEllipse(in: rect)
         case .handDrawn:
             context.addPath(roughEllipsePath(rect, style: roughStyle, pass: 0))
@@ -216,6 +220,14 @@ private enum ShapeDrawing {
             context.setLineWidth(lineWidth)
             context.stroke(rect)
             context.restoreGState()
+        case .rounded:
+            context.saveGState()
+            context.setStrokeColor(color.cgColor)
+            context.setLineWidth(lineWidth)
+            context.setLineJoin(.round)
+            context.addPath(roundedRectPath(rect, lineWidth: lineWidth))
+            context.strokePath()
+            context.restoreGState()
         case .handDrawn:
             let drawingRect = rect.insetBy(dx: strokeInset(for: rect, lineWidth: lineWidth), dy: strokeInset(for: rect, lineWidth: lineWidth))
             drawRoughStroke(
@@ -230,7 +242,7 @@ private enum ShapeDrawing {
 
     static func strokeEllipse(_ rect: NSRect, color: NSColor, lineWidth: CGFloat, strokeStyle: ShapeStrokeStyle, roughStyle: RoughShapeStyle, in context: CGContext) {
         switch strokeStyle {
-        case .standard:
+        case .standard, .rounded:
             context.saveGState()
             context.setStrokeColor(color.cgColor)
             context.setLineWidth(lineWidth)
@@ -253,13 +265,17 @@ private enum ShapeDrawing {
         return min(shortest * 0.2, max(12, lineWidth * 3.2))
     }
 
+    private static func roundedRectPath(_ rect: NSRect, lineWidth: CGFloat) -> CGPath {
+        let radius = roundedRectRadius(for: rect, lineWidth: lineWidth)
+        return CGPath(roundedRect: rect, cornerWidth: radius, cornerHeight: radius, transform: nil)
+    }
+
     static func rectPath(_ rect: NSRect, lineWidth: CGFloat, strokeStyle: ShapeStrokeStyle) -> CGPath {
         switch strokeStyle {
         case .standard:
             return CGPath(rect: rect, transform: nil)
-        case .handDrawn:
-            let radius = roundedRectRadius(for: rect, lineWidth: lineWidth)
-            return CGPath(roundedRect: rect, cornerWidth: radius, cornerHeight: radius, transform: nil)
+        case .rounded, .handDrawn:
+            return roundedRectPath(rect, lineWidth: lineWidth)
         }
     }
 

@@ -200,6 +200,7 @@
 "shapeFillOpaque" = "Fill";
 "shapeFillTranslucent" = "Translucent fill";
 "shapeStyleStandard" = "Default style";
+"shapeStyleRounded" = "Rounded rectangle style";
 "shapeStyleHandDrawn" = "Hand-drawn rounded style";
 "insertImageFromClipboard" = "From Clipboard";
 "insertImageFromFile" = "From File";

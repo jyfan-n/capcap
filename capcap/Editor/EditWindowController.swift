@@ -359,6 +359,7 @@ class EditWindowController {
         }
         activeTool = tool
         canvasView?.activeTool = tool
+        normalizeShapeStrokeStyle(for: tool)
         pushCurrentStyleToCanvas()
         toolbars.forEach { $0.updateSelection(tool: tool) }
         updateEditorInteractionState()
@@ -453,7 +454,7 @@ class EditWindowController {
             currentColor = e.color
             currentLineWidth = e.lineWidth
             currentShapeFillMode = e.fillMode
-            currentShapeStrokeStyle = e.strokeStyle
+            currentShapeStrokeStyle = e.strokeStyle == .rounded ? .standard : e.strokeStyle
         case let a as ArrowAnnotation:
             currentColor = a.color
             currentLineWidth = a.lineWidth
@@ -472,6 +473,11 @@ class EditWindowController {
         default:
             break
         }
+    }
+
+    private func normalizeShapeStrokeStyle(for tool: EditTool) {
+        guard tool == .ellipse, currentShapeStrokeStyle == .rounded else { return }
+        currentShapeStrokeStyle = .standard
     }
 
     private func showSubToolbar(for tool: EditTool) {
@@ -517,7 +523,8 @@ class EditWindowController {
                     sizes: EditorStyleDefaults.standardLineSizes,
                     dynamicColor: pickedColorSwatch,
                     showsShapeFillModes: true,
-                    showsShapeStrokeStyles: true
+                    showsShapeStrokeStyles: true,
+                    shapeStrokePreviewShape: tool == .ellipse ? .ellipse : .rectangle
                 ),
                 onSize: { [weak self] size in
                     self?.setCurrentDrawingLineWidth(size)
@@ -601,7 +608,8 @@ class EditWindowController {
             dynamicColor: dynamicColor,
             showsShapeFillModes: shapeFillMode != nil,
             showsArrowStyles: arrowStyle != nil,
-            showsShapeStrokeStyles: shapeStrokeStyle != nil
+            showsShapeStrokeStyles: shapeStrokeStyle != nil,
+            shapeStrokePreviewShape: shapeStrokePreviewShape
         )
         let subRect = subToolbarRect(
             width: resolvedWidth,
@@ -3431,7 +3439,8 @@ private class ColorSizeSubToolbar: NSView {
         dynamicColor: NSColor?,
         showsShapeFillModes: Bool,
         showsArrowStyles: Bool = false,
-        showsShapeStrokeStyles: Bool = false
+        showsShapeStrokeStyles: Bool = false,
+        shapeStrokePreviewShape: ShapeStrokePreviewShape = .rectangle
     ) -> CGFloat {
         var x = leadingPad
         if !sizes.isEmpty {
@@ -3454,12 +3463,21 @@ private class ColorSizeSubToolbar: NSView {
         }
 
         if showsShapeStrokeStyles {
-            let styleCount = CGFloat(ShapeStrokeStyle.allCases.count)
+            let styleCount = CGFloat(shapeStrokeStyles(for: shapeStrokePreviewShape).count)
             x += separatorGap + 1 + arrowStyleGap
             x += styleCount * shapeButtonWidth + max(styleCount - 1, 0) * arrowStyleButtonGap
         }
 
         return ceil(x + trailingPad)
+    }
+
+    private static func shapeStrokeStyles(for previewShape: ShapeStrokePreviewShape) -> [ShapeStrokeStyle] {
+        switch previewShape {
+        case .rectangle:
+            return ShapeStrokeStyle.allCases
+        case .ellipse:
+            return ShapeStrokeStyle.allCases.filter { $0 != .rounded }
+        }
     }
 
     init(
@@ -3622,7 +3640,7 @@ private class ColorSizeSubToolbar: NSView {
             addSubview(styleSep)
 
             x = styleSepX + 1 + ColorSizeSubToolbar.arrowStyleGap
-            for style in ShapeStrokeStyle.allCases {
+            for style in Self.shapeStrokeStyles(for: shapeStrokePreviewShape) {
                 let button = ShapeStrokeStyleButtonView(
                     frame: NSRect(
                         x: x,
@@ -4725,7 +4743,14 @@ private final class ShapeStrokeStyleButtonView: NSView {
         self.previewShape = previewShape
         self.isSelected = isSelected
         super.init(frame: frame)
-        toolTip = style == .standard ? L10n.shapeStyleStandard : L10n.shapeStyleHandDrawn
+        switch style {
+        case .standard:
+            toolTip = L10n.shapeStyleStandard
+        case .rounded:
+            toolTip = L10n.shapeStyleRounded
+        case .handDrawn:
+            toolTip = L10n.shapeStyleHandDrawn
+        }
     }
 
     required init?(coder: NSCoder) {
@@ -4746,6 +4771,13 @@ private final class ShapeStrokeStyleButtonView: NSView {
         switch style {
         case .standard:
             drawStandardIcon(color: color)
+        case .rounded:
+            switch previewShape {
+            case .rectangle:
+                drawRoundedRectangleIcon(color: color)
+            case .ellipse:
+                drawStandardIcon(color: color)
+            }
         case .handDrawn:
             switch previewShape {
             case .rectangle:
@@ -4776,6 +4808,14 @@ private final class ShapeStrokeStyleButtonView: NSView {
             path.lineWidth = 1.9
             path.stroke()
         }
+    }
+
+    private func drawRoundedRectangleIcon(color: NSColor) {
+        color.setStroke()
+        let rect = bounds.insetBy(dx: 6, dy: 4.5)
+        let path = NSBezierPath(roundedRect: rect, xRadius: 4.3, yRadius: 4.3)
+        path.lineWidth = 1.9
+        path.stroke()
     }
 
     private func drawHandDrawnRectangleIcon(color: NSColor) {

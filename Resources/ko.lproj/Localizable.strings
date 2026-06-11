@@ -200,6 +200,7 @@
 "shapeFillOpaque" = "채우기";
 "shapeFillTranslucent" = "반투명 채우기";
 "shapeStyleStandard" = "기본 스타일";
+"shapeStyleRounded" = "둥근 사각형 스타일";
 "shapeStyleHandDrawn" = "손그림 둥근 스타일";
 "insertImageFromClipboard" = "클립보드에서";
 "insertImageFromFile" = "파일에서";

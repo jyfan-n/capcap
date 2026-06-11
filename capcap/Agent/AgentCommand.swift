@@ -381,12 +381,13 @@ private struct AgentAnnotationSpec: Decodable {
 
         case "ellipse", "oval", "circle":
             let rect = try requireRect().canvasRect(using: mapper)
+            let strokeStyle = resolvedStrokeStyle()
             return EllipseAnnotation(
                 rect: rect,
                 color: resolvedColor(default: AgentColor.defaultRed),
                 lineWidth: positive(lineWidth, fallback: 4, name: "lineWidth"),
                 fillMode: resolvedFillMode(),
-                strokeStyle: resolvedStrokeStyle(),
+                strokeStyle: strokeStyle == .rounded ? .standard : strokeStyle,
                 rotation: resolvedRotation()
             )
 
@@ -557,6 +558,8 @@ private struct AgentAnnotationSpec: Decodable {
     private func resolvedStrokeStyle() -> ShapeStrokeStyle {
         guard let strokeStyle else { return .standard }
         switch strokeStyle.trimmingCharacters(in: .whitespacesAndNewlines).lowercased() {
+        case "rounded", "round", "roundedrect", "rounded-rect", "roundedrectangle", "rounded-rectangle":
+            return .rounded
         case "handdrawn", "hand-drawn", "rough":
             return .handDrawn
         default:

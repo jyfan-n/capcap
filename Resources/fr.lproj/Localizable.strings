@@ -200,6 +200,7 @@
 "shapeFillOpaque" = "Remplissage";
 "shapeFillTranslucent" = "Remplissage translucide";
 "shapeStyleStandard" = "Style par défaut";
+"shapeStyleRounded" = "Rectangle arrondi";
 "shapeStyleHandDrawn" = "Style arrondi dessiné";
 "insertImageFromClipboard" = "Depuis le presse-papiers";
 "insertImageFromFile" = "Depuis un fichier";

@@ -200,6 +200,7 @@
 "shapeFillOpaque" = "塗りつぶし";
 "shapeFillTranslucent" = "半透明の塗り";
 "shapeStyleStandard" = "標準スタイル";
+"shapeStyleRounded" = "角丸四角形スタイル";
 "shapeStyleHandDrawn" = "手描き角丸スタイル";
 "insertImageFromClipboard" = "クリップボードから";
 "insertImageFromFile" = "ファイルから";

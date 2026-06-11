@@ -200,6 +200,7 @@
 "shapeFillOpaque" = "Tô màu";
 "shapeFillTranslucent" = "Tô bán trong suốt";
 "shapeStyleStandard" = "Kiểu mặc định";
+"shapeStyleRounded" = "Kiểu chữ nhật bo góc";
 "shapeStyleHandDrawn" = "Kiểu vẽ tay bo góc";
 "insertImageFromClipboard" = "Từ clipboard";
 "insertImageFromFile" = "Từ tệp";

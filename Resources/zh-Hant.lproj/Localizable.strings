@@ -200,6 +200,7 @@
 "shapeFillOpaque" = "填充";
 "shapeFillTranslucent" = "半透明填充";
 "shapeStyleStandard" = "預設樣式";
+"shapeStyleRounded" = "圓角矩形";
 "shapeStyleHandDrawn" = "手繪圓角";
 "insertImageFromClipboard" = "從剪貼簿插入";
 "insertImageFromFile" = "從本機檔案插入";
