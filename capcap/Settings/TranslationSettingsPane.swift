@@ -410,6 +410,8 @@ private final class TranslationProviderCard: NSView {
             if config.apiKey.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
                 setExpanded(true, animated: true)
             }
+        } else {
+            setExpanded(false, animated: true)
         }
         TranslationConfigStore.setEnabled(on, for: kind)
     }
