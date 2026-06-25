@@ -558,6 +558,7 @@ private final class ProviderCard: NSView {
             pendingTestToken = nil
             status = .untested
             logView.append(.info, L10n.uploadLogProviderDisabled)
+            setExpanded(false, animated: true)
         }
     }
 
