@@ -317,6 +317,9 @@ class OverlayWindowController {
             if self?.editController?.isTextEditing == true {
                 return event
             }
+            if self?.editController?.confirmCropFromKeyboard(for: event) == true {
+                return nil
+            }
             if self?.editController?.undoFromKeyboard(for: event) == true {
                 return nil
             }

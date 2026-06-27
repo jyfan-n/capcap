@@ -75,6 +75,14 @@ class EditWindowController {
         isScrollCapturing || isCropping
     }
 
+    private var isLiveScreenCaptureSession: Bool {
+        overrideBaseImage == nil && onRecordingSelection != nil
+    }
+
+    private var isScrollCaptureAllowed: Bool {
+        isLiveScreenCaptureSession && !isWindowCapture
+    }
+
     struct RestorableState {
         let canvasState: EditCanvasView.RestorableState
         let beautifyState: BeautifyState
@@ -240,10 +248,7 @@ class EditWindowController {
             hostSelectionView.addSubview(sv)
         }
 
-        if overrideBaseImage != nil || onRecordingSelection == nil {
-            toolbars.forEach { $0.setScrollCaptureEnabled(false) }
-            toolbars.forEach { $0.setRecordingEnabled(false) }
-        }
+        updateCaptureActionAvailability()
     }
 
     /// Injects the controller's action callbacks into a toolbar. Both the
@@ -280,6 +285,15 @@ class EditWindowController {
         toolbars.forEach {
             $0.setUndoEnabled(canUndo)
             $0.setRedoEnabled(canRedo)
+        }
+    }
+
+    private func updateCaptureActionAvailability() {
+        let scrollCaptureEnabled = isScrollCaptureAllowed && canvasView?.hasPreviewImage != true
+        let recordingEnabled = isLiveScreenCaptureSession
+        toolbars.forEach {
+            $0.setScrollCaptureEnabled(scrollCaptureEnabled)
+            $0.setRecordingEnabled(recordingEnabled)
         }
     }
 
@@ -334,6 +348,7 @@ class EditWindowController {
         // positioning floating chrome so toolbar anchors against the right rect.
         updateCanvasFrameForBeautify()
 
+        updateCaptureActionAvailability()
         repositionFloatingChrome()
     }
 
@@ -1180,8 +1195,8 @@ class EditWindowController {
 
     private func toggleScrollCapture() {
         // Scroll capture only makes sense for live screen content; in
-        // image-edit mode there's nothing to scroll.
-        if overrideBaseImage != nil { return }
+        // image-edit mode or clicked-window captures there's nothing to scroll.
+        guard isScrollCaptureAllowed else { return }
         if canvasView?.hasPreviewImage == true { return }
         if isScrollCapturing {
             stopScrollCapture()
@@ -1213,6 +1228,7 @@ class EditWindowController {
     }
 
     private func startScrollCapture(mode: ScrollCaptureMode) {
+        guard isScrollCaptureAllowed else { return }
         guard canvasView?.hasPreviewImage != true else { return }
 
         if isBeautifyActive {
@@ -1426,6 +1442,7 @@ class EditWindowController {
         updateCanvasScrollAvailability()
         canvasScrollView?.scrollToTop()
         updateEditorInteractionState()
+        updateCaptureActionAvailability()
     }
 
     private static func sizeLabelText(for size: NSSize) -> String? {
@@ -1918,6 +1935,21 @@ class EditWindowController {
             return
         }
         save()
+    }
+
+    func confirmCropFromKeyboard(for event: NSEvent) -> Bool {
+        guard isCropping else { return false }
+        let blockedModifiers: NSEvent.ModifierFlags = [.command, .control, .option]
+        let modifiers = event.modifierFlags.intersection(.deviceIndependentFlagsMask)
+        guard modifiers.intersection(blockedModifiers).isEmpty else { return false }
+
+        switch Int(event.keyCode) {
+        case kVK_Return, kVK_ANSI_KeypadEnter:
+            confirmCrop()
+            return true
+        default:
+            return false
+        }
     }
 
     func undoFromKeyboard(for event: NSEvent) -> Bool {
