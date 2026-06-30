@@ -692,6 +692,36 @@ struct Defaults {
         defaults.removeObject(forKey: "screenshotHotkeyModifiers")
     }
 
+    static let selectionAspectRatioPresets: [CGFloat] = [
+        16.0 / 9.0,
+        3.0 / 2.0,
+        4.0 / 3.0,
+        1.0,
+        9.0 / 16.0,
+    ]
+
+    static var selectionAspectRatio: Double {
+        get {
+            let ratio = defaults.double(forKey: "selectionAspectRatio")
+            return ratio > 0 && ratio.isFinite ? ratio : 0
+        }
+        set {
+            guard newValue > 0, newValue.isFinite else {
+                clearSelectionAspectRatio()
+                return
+            }
+            defaults.set(newValue, forKey: "selectionAspectRatio")
+        }
+    }
+
+    static var hasSelectionAspectRatio: Bool {
+        defaults.object(forKey: "selectionAspectRatio") != nil && selectionAspectRatio > 0
+    }
+
+    static func clearSelectionAspectRatio() {
+        defaults.removeObject(forKey: "selectionAspectRatio")
+    }
+
     private static func clearLegacyPinHotkey() {
         defaults.removeObject(forKey: "pinHotkeyKeyCode")
         defaults.removeObject(forKey: "pinHotkeyModifiers")

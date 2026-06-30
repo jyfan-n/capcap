@@ -60,6 +60,7 @@ class SelectionView: NSView {
 
     // When false, the selection frame becomes a fixed viewport.
     var selectionInteractionEnabled = true
+    var aspectRatio: CGFloat? = nil
     var selectionSizeLabelOverride: String? {
         didSet { needsDisplay = true }
     }
@@ -143,7 +144,8 @@ class SelectionView: NSView {
         let newRect = SelectionView.resizedRect(
             from: originalRect,
             handle: handle,
-            currentPoint: currentPoint
+            currentPoint: currentPoint,
+            aspectRatio: aspectRatio
         )
         selectionRect = newRect
         state = .selected
@@ -268,11 +270,11 @@ class SelectionView: NSView {
                 pendingWindowID = nil
             }
             NSCursor.crosshair.set()
-            let x = min(selectionOrigin.x, point.x)
-            let y = min(selectionOrigin.y, point.y)
-            let width = abs(point.x - selectionOrigin.x)
-            let height = abs(point.y - selectionOrigin.y)
-            selectionRect = NSRect(x: x, y: y, width: width, height: height)
+            selectionRect = SelectionView.dragRect(
+                from: selectionOrigin,
+                to: point,
+                aspectRatio: aspectRatio
+            )
             needsDisplay = true
 
         case .move:
@@ -289,7 +291,12 @@ class SelectionView: NSView {
             needsDisplay = true
 
         case .resize(let handle):
-            let newRect = SelectionView.resizedRect(from: dragOriginalRect, handle: handle, currentPoint: point)
+            let newRect = SelectionView.resizedRect(
+                from: dragOriginalRect,
+                handle: handle,
+                currentPoint: point,
+                aspectRatio: aspectRatio
+            )
             selectionRect = newRect
             delegate?.selectionDidChange(rect: newRect, inView: self)
             needsDisplay = true
@@ -613,7 +620,41 @@ class SelectionView: NSView {
 
     // MARK: - Resize Logic
 
-    static func resizedRect(from original: NSRect, handle: HandlePosition, currentPoint: NSPoint) -> NSRect {
+    private static func dragRect(from origin: NSPoint, to point: NSPoint, aspectRatio: CGFloat?) -> NSRect {
+        guard let ratio = normalizedAspectRatio(aspectRatio) else {
+            let x = min(origin.x, point.x)
+            let y = min(origin.y, point.y)
+            let width = abs(point.x - origin.x)
+            let height = abs(point.y - origin.y)
+            return NSRect(x: x, y: y, width: width, height: height)
+        }
+
+        let dx = point.x - origin.x
+        let dy = point.y - origin.y
+        let unconstrainedWidth = abs(dx)
+        let unconstrainedHeight = abs(dy)
+        let constrainedWidth = max(unconstrainedWidth, unconstrainedHeight * ratio)
+        let constrainedHeight = constrainedWidth / ratio
+        let signedWidth = dx < 0 ? -constrainedWidth : constrainedWidth
+        let signedHeight = dy < 0 ? -constrainedHeight : constrainedHeight
+        let maxX = origin.x + signedWidth
+        let maxY = origin.y + signedHeight
+
+        return NSRect(
+            x: min(origin.x, maxX),
+            y: min(origin.y, maxY),
+            width: abs(signedWidth),
+            height: abs(signedHeight)
+        )
+    }
+
+    static func resizedRect(
+        from original: NSRect,
+        handle: HandlePosition,
+        currentPoint: NSPoint,
+        aspectRatio: CGFloat? = nil
+    ) -> NSRect {
+        let minimumSize: CGFloat = 5
         var minX = original.minX
         var minY = original.minY
         var maxX = original.maxX
@@ -621,28 +662,155 @@ class SelectionView: NSView {
 
         switch handle {
         case .topLeft:
-            minX = min(currentPoint.x, maxX - 5)
-            maxY = max(currentPoint.y, minY + 5)
+            minX = min(currentPoint.x, maxX - minimumSize)
+            maxY = max(currentPoint.y, minY + minimumSize)
         case .topRight:
-            maxX = max(currentPoint.x, minX + 5)
-            maxY = max(currentPoint.y, minY + 5)
+            maxX = max(currentPoint.x, minX + minimumSize)
+            maxY = max(currentPoint.y, minY + minimumSize)
         case .bottomLeft:
-            minX = min(currentPoint.x, maxX - 5)
-            minY = min(currentPoint.y, maxY - 5)
+            minX = min(currentPoint.x, maxX - minimumSize)
+            minY = min(currentPoint.y, maxY - minimumSize)
         case .bottomRight:
-            maxX = max(currentPoint.x, minX + 5)
-            minY = min(currentPoint.y, maxY - 5)
+            maxX = max(currentPoint.x, minX + minimumSize)
+            minY = min(currentPoint.y, maxY - minimumSize)
         case .topCenter:
-            maxY = max(currentPoint.y, minY + 5)
+            maxY = max(currentPoint.y, minY + minimumSize)
         case .bottomCenter:
-            minY = min(currentPoint.y, maxY - 5)
+            minY = min(currentPoint.y, maxY - minimumSize)
         case .leftCenter:
-            minX = min(currentPoint.x, maxX - 5)
+            minX = min(currentPoint.x, maxX - minimumSize)
         case .rightCenter:
-            maxX = max(currentPoint.x, minX + 5)
+            maxX = max(currentPoint.x, minX + minimumSize)
         }
 
-        return NSRect(x: minX, y: minY, width: maxX - minX, height: maxY - minY)
+        let unconstrained = NSRect(x: minX, y: minY, width: maxX - minX, height: maxY - minY)
+        guard let ratio = normalizedAspectRatio(aspectRatio) else { return unconstrained }
+        return aspectLockedRect(
+            from: unconstrained,
+            original: original,
+            handle: handle,
+            aspectRatio: ratio,
+            minimumSize: minimumSize
+        )
+    }
+
+    private static func normalizedAspectRatio(_ aspectRatio: CGFloat?) -> CGFloat? {
+        guard let aspectRatio, aspectRatio > 0, aspectRatio.isFinite else { return nil }
+        return aspectRatio
+    }
+
+    private static func aspectLockedRect(
+        from unconstrained: NSRect,
+        original: NSRect,
+        handle: HandlePosition,
+        aspectRatio: CGFloat,
+        minimumSize: CGFloat
+    ) -> NSRect {
+        switch handle {
+        case .topLeft:
+            let size = aspectSize(
+                fittingWidth: unconstrained.width,
+                height: unconstrained.height,
+                aspectRatio: aspectRatio,
+                minimumSize: minimumSize
+            )
+            return NSRect(x: original.maxX - size.width, y: original.minY, width: size.width, height: size.height)
+        case .topRight:
+            let size = aspectSize(
+                fittingWidth: unconstrained.width,
+                height: unconstrained.height,
+                aspectRatio: aspectRatio,
+                minimumSize: minimumSize
+            )
+            return NSRect(x: original.minX, y: original.minY, width: size.width, height: size.height)
+        case .bottomLeft:
+            let size = aspectSize(
+                fittingWidth: unconstrained.width,
+                height: unconstrained.height,
+                aspectRatio: aspectRatio,
+                minimumSize: minimumSize
+            )
+            return NSRect(x: original.maxX - size.width, y: original.maxY - size.height, width: size.width, height: size.height)
+        case .bottomRight:
+            let size = aspectSize(
+                fittingWidth: unconstrained.width,
+                height: unconstrained.height,
+                aspectRatio: aspectRatio,
+                minimumSize: minimumSize
+            )
+            return NSRect(x: original.minX, y: original.maxY - size.height, width: size.width, height: size.height)
+        case .topCenter:
+            let size = aspectSize(
+                fromHeight: unconstrained.height,
+                aspectRatio: aspectRatio,
+                minimumSize: minimumSize
+            )
+            return NSRect(x: original.midX - size.width / 2, y: original.minY, width: size.width, height: size.height)
+        case .bottomCenter:
+            let size = aspectSize(
+                fromHeight: unconstrained.height,
+                aspectRatio: aspectRatio,
+                minimumSize: minimumSize
+            )
+            return NSRect(x: original.midX - size.width / 2, y: original.maxY - size.height, width: size.width, height: size.height)
+        case .leftCenter:
+            let size = aspectSize(
+                fromWidth: unconstrained.width,
+                aspectRatio: aspectRatio,
+                minimumSize: minimumSize
+            )
+            return NSRect(x: original.maxX - size.width, y: original.midY - size.height / 2, width: size.width, height: size.height)
+        case .rightCenter:
+            let size = aspectSize(
+                fromWidth: unconstrained.width,
+                aspectRatio: aspectRatio,
+                minimumSize: minimumSize
+            )
+            return NSRect(x: original.minX, y: original.midY - size.height / 2, width: size.width, height: size.height)
+        }
+    }
+
+    private static func aspectSize(
+        fittingWidth width: CGFloat,
+        height: CGFloat,
+        aspectRatio: CGFloat,
+        minimumSize: CGFloat
+    ) -> CGSize {
+        var constrainedWidth = max(width, height * aspectRatio, minimumSize)
+        var constrainedHeight = constrainedWidth / aspectRatio
+        if constrainedHeight < minimumSize {
+            constrainedHeight = minimumSize
+            constrainedWidth = constrainedHeight * aspectRatio
+        }
+        return CGSize(width: constrainedWidth, height: constrainedHeight)
+    }
+
+    private static func aspectSize(
+        fromHeight height: CGFloat,
+        aspectRatio: CGFloat,
+        minimumSize: CGFloat
+    ) -> CGSize {
+        var constrainedHeight = max(height, minimumSize)
+        var constrainedWidth = constrainedHeight * aspectRatio
+        if constrainedWidth < minimumSize {
+            constrainedWidth = minimumSize
+            constrainedHeight = constrainedWidth / aspectRatio
+        }
+        return CGSize(width: constrainedWidth, height: constrainedHeight)
+    }
+
+    private static func aspectSize(
+        fromWidth width: CGFloat,
+        aspectRatio: CGFloat,
+        minimumSize: CGFloat
+    ) -> CGSize {
+        var constrainedWidth = max(width, minimumSize)
+        var constrainedHeight = constrainedWidth / aspectRatio
+        if constrainedHeight < minimumSize {
+            constrainedHeight = minimumSize
+            constrainedWidth = constrainedHeight * aspectRatio
+        }
+        return CGSize(width: constrainedWidth, height: constrainedHeight)
     }
 
     // MARK: - Cursor

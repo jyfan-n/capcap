@@ -282,6 +282,7 @@ class OverlayWindowController {
             let selectionView = SelectionView(frame: screen.frame)
             selectionView.delegate = self
             selectionView.windowDetector = windowDetector
+            selectionView.aspectRatio = Self.persistedSelectionAspectRatio
             if let displayID = screen.deviceDescription[NSDeviceDescriptionKey("NSScreenNumber")] as? CGDirectDisplayID,
                let snapshot = screenSnapshots[displayID] {
                 selectionView.backgroundSnapshot = NSImage(cgImage: snapshot, size: screen.frame.size)
@@ -342,6 +343,9 @@ class OverlayWindowController {
                 self?.cancel()
                 return nil
             }
+            if self?.cycleSelectionAspectRatioFromKeyboard(for: event) == true {
+                return nil
+            }
             if HotkeyManager.eventMatchesClipboardHotkey(event) {
                 self?.editController?.confirmFromKeyboard()
                 return nil
@@ -391,6 +395,49 @@ class OverlayWindowController {
                 enterPresetSelection()
             }
         }
+    }
+
+    private static var persistedSelectionAspectRatio: CGFloat? {
+        guard Defaults.hasSelectionAspectRatio else { return nil }
+        let ratio = Defaults.selectionAspectRatio
+        guard ratio > 0, ratio.isFinite else { return nil }
+        return CGFloat(ratio)
+    }
+
+    private func cycleSelectionAspectRatioFromKeyboard(for event: NSEvent) -> Bool {
+        guard editController == nil, event.keyCode == 15 else { return false }
+        let modifierMask: NSEvent.ModifierFlags = [.command, .option, .control, .shift]
+        guard event.modifierFlags.intersection(modifierMask).isEmpty else { return false }
+
+        let presets = Defaults.selectionAspectRatioPresets
+        let currentModeIndex: Int
+        if Defaults.hasSelectionAspectRatio {
+            let currentRatio = CGFloat(Defaults.selectionAspectRatio)
+            let presetIndex = presets.firstIndex { abs($0 - currentRatio) < 0.000_001 }
+            currentModeIndex = presetIndex.map { $0 + 1 } ?? 0
+        } else {
+            currentModeIndex = 0
+        }
+
+        let nextModeIndex = (currentModeIndex + 1) % (presets.count + 1)
+        let nextAspectRatio: CGFloat?
+        if nextModeIndex == 0 {
+            Defaults.clearSelectionAspectRatio()
+            nextAspectRatio = nil
+        } else {
+            let ratio = presets[nextModeIndex - 1]
+            Defaults.selectionAspectRatio = Double(ratio)
+            nextAspectRatio = ratio
+        }
+        applySelectionAspectRatio(nextAspectRatio)
+        return true
+    }
+
+    private func applySelectionAspectRatio(_ aspectRatio: CGFloat?) {
+        for case let selectionView as SelectionView in windows.compactMap(\.contentView) {
+            selectionView.aspectRatio = aspectRatio
+        }
+        activeSelectionView?.aspectRatio = aspectRatio
     }
 
     private static var isRunningEventTrackingMode: Bool {
