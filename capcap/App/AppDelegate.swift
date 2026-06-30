@@ -70,7 +70,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
             onRecord: { [weak self] in self?.handleRecordingTrigger() },
             onMergeImages: { [weak self] in self?.handleImageMergeMenuTrigger() },
             onColorPicker: { [weak self] in self?.handleColorPickerTrigger() },
-            onOpenHistoryPanel: { [weak self] in self?.handleHistoryPanelTrigger() },
+            onOpenHistoryPanel: { [weak self] in self?.handleHistoryPanelTrigger(holdOpenUntilMouseEnters: true) },
             onOpenSettings: { [weak self] in self?.openSettings() }
         )
         statusBarController.setMenuBarVisible(Defaults.showMenuBar)
@@ -234,7 +234,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
 
         if Defaults.hasCustomHistoryPanelHotkey {
             HotkeyManager.shared.registerHistoryPanel { [weak self] in
-                self?.handleHistoryPanelTrigger(fromShortcut: true)
+                self?.handleHistoryPanelTrigger(holdOpenUntilMouseEnters: true)
             }
         } else {
             HotkeyManager.shared.unregisterHistoryPanel()
@@ -257,8 +257,8 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         HotkeyManager.shared.unregisterHistoryPanel()
     }
 
-    private func handleHistoryPanelTrigger(fromShortcut: Bool = false) {
-        historyPanelController?.toggleFromUserRequest(openedByShortcut: fromShortcut)
+    private func handleHistoryPanelTrigger(holdOpenUntilMouseEnters: Bool = false) {
+        historyPanelController?.toggleFromUserRequest(holdOpenUntilMouseEnters: holdOpenUntilMouseEnters)
     }
 
     /// KeyMonitor entry point for plain double-tap ⌘. While an overlay is

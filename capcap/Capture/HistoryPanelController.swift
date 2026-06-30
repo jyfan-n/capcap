@@ -39,14 +39,14 @@ final class HistoryPanelController {
         notchController?.close()
     }
 
-    func toggleFromUserRequest(openedByShortcut: Bool = false) {
+    func toggleFromUserRequest(holdOpenUntilMouseEnters: Bool = false) {
         guard Defaults.historyCacheEnabled else { return }
         if Defaults.historyPanelDialogEnabled {
             toggleDialog()
             return
         }
         if Defaults.historyPanelNotchEnabled {
-            ensureNotchController().toggleFromUserRequest(openedByShortcut: openedByShortcut)
+            ensureNotchController().toggleFromUserRequest(holdOpenUntilMouseEnters: holdOpenUntilMouseEnters)
         }
     }
 
@@ -217,8 +217,8 @@ private final class HistoryNotchWindowController: NSWindowController {
     private var collapseWorkItem: DispatchWorkItem?
     private var isCollapsing = false
     private var suppressCollapseUntil: Date?
-    private var waitsForShortcutOpenedMouseExit = false
-    private var shortcutOpenedMouseHasEnteredHoverRegion = false
+    private var holdsOpenUntilMouseEntersHoverRegion = false
+    private var commandOpenedMouseHasEnteredHoverRegion = false
 
     private let expandDelay: TimeInterval = 0.03
     private let collapseDelay: TimeInterval = 0.35
@@ -279,20 +279,20 @@ private final class HistoryNotchWindowController: NSWindowController {
         super.close()
     }
 
-    func toggleFromUserRequest(openedByShortcut: Bool = false) {
+    func toggleFromUserRequest(holdOpenUntilMouseEnters: Bool = false) {
         if rootView.isExpanded {
             collapse()
         } else {
-            expand(waitingForMouseExit: openedByShortcut)
+            expand(holdOpenUntilMouseEnters: holdOpenUntilMouseEnters)
         }
     }
 
-    private func expand(waitingForMouseExit: Bool = false) {
+    private func expand(holdOpenUntilMouseEnters: Bool = false) {
         guard !rootView.isExpanded else { return }
         isCollapsing = false
         cancelCollapse()
-        waitsForShortcutOpenedMouseExit = waitingForMouseExit
-        shortcutOpenedMouseHasEnteredHoverRegion = false
+        holdsOpenUntilMouseEntersHoverRegion = holdOpenUntilMouseEnters
+        commandOpenedMouseHasEnteredHoverRegion = false
         window?.ignoresMouseEvents = false
         window?.orderFrontRegardless()
         rootView.setExpanded(true, animated: true)
@@ -301,8 +301,8 @@ private final class HistoryNotchWindowController: NSWindowController {
     private func collapse() {
         guard rootView.isExpanded else { return }
         cancelExpand()
-        waitsForShortcutOpenedMouseExit = false
-        shortcutOpenedMouseHasEnteredHoverRegion = false
+        holdsOpenUntilMouseEntersHoverRegion = false
+        commandOpenedMouseHasEnteredHoverRegion = false
         rootView.setExpanded(false, animated: true)
         isCollapsing = true
         DispatchQueue.main.asyncAfter(deadline: .now() + collapseAnimationDuration) { [weak self] in
@@ -345,11 +345,11 @@ private final class HistoryNotchWindowController: NSWindowController {
         if rootView.isExpanded {
             let rect = expandedHoverRect(in: window)
             if rect.contains(mouse) {
-                shortcutOpenedMouseHasEnteredHoverRegion = true
+                commandOpenedMouseHasEnteredHoverRegion = true
                 cancelCollapse()
                 rootView.syncHoverStateWithCurrentMouse()
             } else {
-                if waitsForShortcutOpenedMouseExit, !shortcutOpenedMouseHasEnteredHoverRegion {
+                if holdsOpenUntilMouseEntersHoverRegion, !commandOpenedMouseHasEnteredHoverRegion {
                     cancelCollapse()
                     return
                 }
